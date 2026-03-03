@@ -32,6 +32,79 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   const [redirectionLink, setRedirectionLink] = useState('');
   const clickAudioRef = useRef<HTMLAudioElement | null>(null);
   const [processingAnimationData, setProcessingAnimationData] = useState<any>(null);
+  const [isScrambling, setIsScrambling] = useState(false);
+
+  // Text scramble effect
+  useEffect(() => {
+    if (!isScrambling) return;
+
+    const chars = '!<>-_\\/[]{}—=+*^?#________';
+    // Only target profile name and email elements
+    const elements = document.querySelectorAll('[data-scramble="profile"]');
+    const textElements: Array<{ element: HTMLElement; originalText: string; currentText: string }> = [];
+
+    // Collect all text elements
+    elements.forEach((el) => {
+      const element = el as HTMLElement;
+      if (element.childNodes.length === 1 && element.childNodes[0].nodeType === 3) {
+        const text = element.textContent || '';
+        if (text.trim().length > 0) {
+          textElements.push({
+            element,
+            originalText: text,
+            currentText: text
+          });
+        }
+      }
+    });
+
+    const startTime = performance.now();
+    const duration = 1200; // 1.2 seconds for ultra smooth animation
+
+    const scramble = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const rawProgress = Math.min(elapsed / duration, 1);
+      
+      // Ease-in-out cubic for ultra smooth motion
+      const easeInOutCubic = (t: number) => {
+        return t < 0.5
+          ? 4 * t * t * t
+          : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      };
+      
+      const progress = easeInOutCubic(rawProgress);
+      
+      textElements.forEach((item) => {
+        const revealCount = Math.floor(progress * item.originalText.length);
+        
+        let scrambledText = '';
+        for (let i = 0; i < item.originalText.length; i++) {
+          if (i < revealCount) {
+            scrambledText += item.originalText[i];
+          } else if (item.originalText[i] === ' ') {
+            scrambledText += ' ';
+          } else {
+            const randomChar = chars[Math.floor(Math.random() * chars.length)];
+            scrambledText += randomChar;
+          }
+        }
+        
+        item.element.textContent = scrambledText;
+      });
+
+      if (rawProgress < 1) {
+        requestAnimationFrame(scramble);
+      } else {
+        // Restore original text
+        textElements.forEach((item) => {
+          item.element.textContent = item.originalText;
+        });
+        setIsScrambling(false);
+      }
+    };
+
+    requestAnimationFrame(scramble);
+  }, [isScrambling]);
 
   useEffect(() => {
     clickAudioRef.current = new Audio('https://storage.googleapis.com/storage.magicpath.ai/global-assets/click-soft-01.mp3');
@@ -866,6 +939,174 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     intake: 'Jan – Mar',
     partner: 'ABC Overseas',
     created: '05/25/2025'
+  }, {
+    name: 'Gregory Foster',
+    email: 'gregory.f@shadcnstudio.com',
+    initial: 'G',
+    color: 'rgba(192, 219, 255, 1)',
+    textColor: 'rgba(18, 55, 104, 1)',
+    status: 'Contacted',
+    city: 'Dublin',
+    countryIcon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/512916cb-9479-4866-80be-157231ec900f.svg',
+    intake: 'Apr – Jun',
+    partner: 'IDP Education',
+    created: '05/26/2025'
+  }, {
+    name: 'Victoria Hughes',
+    email: 'victoria.h@shadcnstudio.com',
+    initial: 'V',
+    color: 'rgba(218, 192, 255, 1)',
+    textColor: 'rgba(62, 26, 117, 1)',
+    status: 'Booked',
+    city: 'Perth',
+    countryIcon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/aac1bf7b-3bcc-41e0-9673-f2f5833a76fa.svg',
+    intake: 'Jul – Sep',
+    partner: 'Vindy Consultancy',
+    created: '05/27/2025'
+  }, {
+    name: 'Harold Price',
+    email: 'harold.p@shadcnstudio.com',
+    initial: 'H',
+    color: 'rgba(192, 213, 255, 1)',
+    textColor: 'rgba(18, 35, 104, 1)',
+    status: 'Not Booked',
+    city: 'Adelaide',
+    countryIcon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/aac1bf7b-3bcc-41e0-9673-f2f5833a76fa.svg',
+    intake: 'Oct – Dec',
+    partner: 'ABC Overseas',
+    created: '05/28/2025'
+  }, {
+    name: 'Olivia Bennett',
+    email: 'olivia.b@shadcnstudio.com',
+    initial: 'O',
+    color: 'rgba(235, 235, 235, 1)',
+    textColor: 'rgba(23, 23, 23, 1)',
+    status: 'Contacted',
+    city: 'London',
+    countryIcon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/ecc02272-7491-4bce-ba22-5da993789664.svg',
+    intake: 'Jan – Mar',
+    partner: 'IDP Education',
+    created: '05/29/2025'
+  }, {
+    name: 'Frank Coleman',
+    email: 'frank.c@shadcnstudio.com',
+    initial: 'F',
+    color: 'rgba(255, 192, 197, 1)',
+    textColor: 'rgba(104, 18, 25, 1)',
+    status: 'Booked',
+    city: 'Cork',
+    countryIcon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/512916cb-9479-4866-80be-157231ec900f.svg',
+    intake: 'Apr – Jun',
+    partner: 'Vindy Consultancy',
+    created: '05/30/2025'
+  }, {
+    name: 'Sophia Jenkins',
+    email: 'sophia.j@shadcnstudio.com',
+    initial: 'S',
+    color: 'rgba(255, 223, 186, 1)',
+    textColor: 'rgba(120, 53, 15, 1)',
+    status: 'Not Booked',
+    city: 'Sydney',
+    countryIcon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/aac1bf7b-3bcc-41e0-9673-f2f5833a76fa.svg',
+    intake: 'Jul – Sep',
+    partner: 'ABC Overseas',
+    created: '05/31/2025'
+  }, {
+    name: 'Walter Perry',
+    email: 'walter.p@shadcnstudio.com',
+    initial: 'W',
+    color: 'rgba(186, 255, 201, 1)',
+    textColor: 'rgba(20, 83, 45, 1)',
+    status: 'Contacted',
+    city: 'Melbourne',
+    countryIcon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/aac1bf7b-3bcc-41e0-9673-f2f5833a76fa.svg',
+    intake: 'Oct – Dec',
+    partner: 'IDP Education',
+    created: '06/01/2025'
+  }, {
+    name: 'Isabella Powell',
+    email: 'isabella.p@shadcnstudio.com',
+    initial: 'I',
+    color: 'rgba(255, 186, 240, 1)',
+    textColor: 'rgba(120, 15, 80, 1)',
+    status: 'Booked',
+    city: 'Brisbane',
+    countryIcon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/aac1bf7b-3bcc-41e0-9673-f2f5833a76fa.svg',
+    intake: 'Jan – Mar',
+    partner: 'Vindy Consultancy',
+    created: '06/02/2025'
+  }, {
+    name: 'Henry Long',
+    email: 'henry.l@shadcnstudio.com',
+    initial: 'H',
+    color: 'rgba(192, 255, 234, 1)',
+    textColor: 'rgba(18, 104, 75, 1)',
+    status: 'Not Booked',
+    city: 'Dublin',
+    countryIcon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/512916cb-9479-4866-80be-157231ec900f.svg',
+    intake: 'Apr – Jun',
+    partner: 'ABC Overseas',
+    created: '06/03/2025'
+  }, {
+    name: 'Charlotte Patterson',
+    email: 'charlotte.p@shadcnstudio.com',
+    initial: 'C',
+    color: 'rgba(234, 192, 255, 1)',
+    textColor: 'rgba(75, 18, 104, 1)',
+    status: 'Contacted',
+    city: 'Perth',
+    countryIcon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/aac1bf7b-3bcc-41e0-9673-f2f5833a76fa.svg',
+    intake: 'Jul – Sep',
+    partner: 'IDP Education',
+    created: '06/04/2025'
+  }, {
+    name: 'Albert Hughes',
+    email: 'albert.h@shadcnstudio.com',
+    initial: 'A',
+    color: 'rgba(255, 234, 192, 1)',
+    textColor: 'rgba(104, 75, 18, 1)',
+    status: 'Booked',
+    city: 'Adelaide',
+    countryIcon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/aac1bf7b-3bcc-41e0-9673-f2f5833a76fa.svg',
+    intake: 'Oct – Dec',
+    partner: 'Vindy Consultancy',
+    created: '06/05/2025'
+  }, {
+    name: 'Amelia Flores',
+    email: 'amelia.f@shadcnstudio.com',
+    initial: 'A',
+    color: 'rgba(192, 213, 255, 1)',
+    textColor: 'rgba(18, 35, 104, 1)',
+    status: 'Not Booked',
+    city: 'London',
+    countryIcon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/ecc02272-7491-4bce-ba22-5da993789664.svg',
+    intake: 'Jan – Mar',
+    partner: 'ABC Overseas',
+    created: '06/06/2025'
+  }, {
+    name: 'Roy Washington',
+    email: 'roy.w@shadcnstudio.com',
+    initial: 'R',
+    color: 'rgba(255, 192, 197, 1)',
+    textColor: 'rgba(104, 18, 25, 1)',
+    status: 'Contacted',
+    city: 'Cork',
+    countryIcon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/512916cb-9479-4866-80be-157231ec900f.svg',
+    intake: 'Apr – Jun',
+    partner: 'IDP Education',
+    created: '06/07/2025'
+  }, {
+    name: 'Mia Butler',
+    email: 'mia.b@shadcnstudio.com',
+    initial: 'M',
+    color: 'rgba(202, 192, 255, 1)',
+    textColor: 'rgba(53, 26, 117, 1)',
+    status: 'Booked',
+    city: 'Sydney',
+    countryIcon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/aac1bf7b-3bcc-41e0-9673-f2f5833a76fa.svg',
+    intake: 'Jul – Sep',
+    partner: 'Vindy Consultancy',
+    created: '06/08/2025'
   }] as any[];
   
   // Listings data
@@ -1427,12 +1668,27 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     return true;
   });
   
+  // Filter leads data based on search query
+  const filteredLeadsData = leadsData.filter((lead: any) => {
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        lead.name.toLowerCase().includes(query) ||
+        lead.email.toLowerCase().includes(query) ||
+        lead.city.toLowerCase().includes(query) ||
+        lead.partner.toLowerCase().includes(query) ||
+        lead.status.toLowerCase().includes(query)
+      );
+    }
+    return true;
+  });
+  
   // Pagination logic
-  const totalItems = leadsData.length;
+  const totalItems = filteredLeadsData.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentLeadsData = leadsData.slice(startIndex, endIndex);
+  const currentLeadsData = filteredLeadsData.slice(startIndex, endIndex);
   const startItem = startIndex + 1;
   const endItem = Math.min(endIndex, totalItems);
 
@@ -2031,6 +2287,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               <motion.button
                 onClick={() => {
                   playClickSound();
+                  setIsScrambling(true);
                   setIsDarkMode(false);
                 }}
                 whileTap={{ scale: 0.9 }}
@@ -2099,6 +2356,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               <motion.button
                 onClick={() => {
                   playClickSound();
+                  setIsScrambling(true);
                   setIsDarkMode(true);
                 }}
                 whileTap={{ scale: 0.9 }}
@@ -2173,11 +2431,11 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
             overflow: 'hidden',
             flexShrink: 0
           }}>
-              <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/dc02994b-7128-4082-bda2-be088cdd50d9.png" style={{
+              <img src="/assets/profile-shashpicious.jpg" style={{
               width: '100%',
               height: '100%',
               objectFit: 'cover'
-            }} alt="Avatar" />
+            }} alt="shashpicious Avatar" />
             </div>
             {!isCollapsed && (
             <>
@@ -2185,26 +2443,27 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
             flex: 1,
             overflow: 'hidden'
           }}>
-              <div style={{
+              <div data-scramble="profile" style={{
               color: colors.textPrimary,
               fontSize: '14px',
               fontWeight: 500,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis'
-            }}>{isDarkMode ? 'Anmol Education' : 'Shadcn'}</div>
-              <div style={{
+            }}>shashpicious</div>
+              <div data-scramble="profile" style={{
               color: colors.textSecondary,
               fontSize: '12px',
               fontWeight: 300,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis'
-            }}>arthur@alignui.com</div>
+            }}>png.shashi@gmail.com</div>
             </div>
             <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/125d49d8-142b-42e6-9e68-672689aeaf70.svg" style={{
             width: '16px',
-            flexShrink: 0
+            flexShrink: 0,
+            filter: isDarkMode ? 'grayscale(100%) brightness(1.4) invert(0.15)' : 'none'
           }} />
             </>
             )}
@@ -2471,13 +2730,13 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                   <button key={`lp-${page}-${i}`} onClick={() => handleListingsPageClick(page)} style={{
                     width: '28px',
                     height: '28px',
-                    border: page === listingsPage ? `1px solid ${colors.accent}` : 'none',
+                    border: page === listingsPage ? (isDarkMode ? '1px solid rgba(115, 115, 115, 1)' : `1px solid ${colors.accent}`) : 'none',
                     borderRadius: '8px',
                     cursor: page === -1 ? 'default' : 'pointer',
                     fontSize: '14px',
                     fontWeight: 500,
-                    backgroundColor: page === listingsPage ? (isDarkMode ? colors.white : 'rgba(237, 243, 255, 1)') : 'transparent',
-                    color: page === listingsPage ? colors.accent : colors.textPrimary
+                    backgroundColor: page === listingsPage ? (isDarkMode ? 'rgba(82, 82, 91, 1)' : 'rgba(237, 243, 255, 1)') : 'transparent',
+                    color: page === listingsPage ? (isDarkMode ? '#FFFFFF' : colors.accent) : colors.textPrimary
                   }}>
                     {page === -1 ? '...' : page}
                   </button>
@@ -2852,13 +3111,13 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 {getCommissionsPageNumbers().map(page => <button key={page} onClick={() => handleCommissionsPageClick(page)} style={{
                   width: '28px',
                   height: '28px',
-                  border: page === commissionsPage ? `1px solid ${colors.accent}` : 'none',
+                  border: page === commissionsPage ? (isDarkMode ? '1px solid rgba(115, 115, 115, 1)' : `1px solid ${colors.accent}`) : 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '14px',
               fontWeight: 500,
-                  backgroundColor: page === commissionsPage ? isDarkMode ? colors.white : 'rgba(237, 243, 255, 1)' : 'transparent',
-                  color: page === commissionsPage ? colors.accent : colors.textPrimary
+                  backgroundColor: page === commissionsPage ? (isDarkMode ? 'rgba(82, 82, 91, 1)' : 'rgba(237, 243, 255, 1)') : 'transparent',
+                  color: page === commissionsPage ? (isDarkMode ? '#FFFFFF' : colors.accent) : colors.textPrimary
                 }}>
                   {page === -1 ? '...' : page}
                 </button>)}
@@ -3178,13 +3437,13 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 {getCampaignsPageNumbers().map(page => <button key={page} onClick={() => handleCampaignsPageClick(page)} style={{
                   width: '28px',
                   height: '28px',
-                  border: page === campaignsPage ? `1px solid ${colors.accent}` : 'none',
+                  border: page === campaignsPage ? (isDarkMode ? '1px solid rgba(115, 115, 115, 1)' : `1px solid ${colors.accent}`) : 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '14px',
                   fontWeight: 500,
-                  backgroundColor: page === campaignsPage ? isDarkMode ? colors.white : 'rgba(237, 243, 255, 1)' : 'transparent',
-                  color: page === campaignsPage ? colors.accent : colors.textPrimary
+                  backgroundColor: page === campaignsPage ? (isDarkMode ? 'rgba(82, 82, 91, 1)' : 'rgba(237, 243, 255, 1)') : 'transparent',
+                  color: page === campaignsPage ? (isDarkMode ? '#FFFFFF' : colors.accent) : colors.textPrimary
                 }}>
                   {page === -1 ? '...' : page}
                 </button>)}
@@ -3488,13 +3747,13 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 {getCampaignsPageNumbers().map(page => <button key={page} onClick={() => handleCampaignsPageClick(page)} style={{
                   width: '28px',
                   height: '28px',
-                  border: page === campaignsPage ? `1px solid ${colors.accent}` : 'none',
+                  border: page === campaignsPage ? (isDarkMode ? '1px solid rgba(115, 115, 115, 1)' : `1px solid ${colors.accent}`) : 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '14px',
                   fontWeight: 500,
-                  backgroundColor: page === campaignsPage ? isDarkMode ? colors.white : 'rgba(237, 243, 255, 1)' : 'transparent',
-                  color: page === campaignsPage ? colors.accent : colors.textPrimary
+                  backgroundColor: page === campaignsPage ? (isDarkMode ? 'rgba(82, 82, 91, 1)' : 'rgba(237, 243, 255, 1)') : 'transparent',
+                  color: page === campaignsPage ? (isDarkMode ? '#FFFFFF' : colors.accent) : colors.textPrimary
                 }}>
                   {page === -1 ? '...' : page}
                 </button>)}
@@ -4893,7 +5152,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               transform: 'translateY(-50%)',
               width: '20px'
             }} />
-              <input type="text" placeholder="Search Leads" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{
+              <input type="text" placeholder="Search Leads" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }} style={{
               width: '100%',
               padding: '6px 40px 6px 32px',
               borderRadius: '8px',
@@ -5178,13 +5437,13 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
             {getPageNumbers().map(page => <button key={page} onClick={() => handlePageClick(page)} style={{
             width: '28px',
             height: '28px',
-            border: page === currentPage ? `1px solid ${colors.accent}` : 'none',
+            border: page === currentPage ? (isDarkMode ? '1px solid rgba(115, 115, 115, 1)' : `1px solid ${colors.accent}`) : 'none',
             borderRadius: '8px',
             cursor: 'pointer',
             fontSize: '14px',
             fontWeight: 500,
-            backgroundColor: page === currentPage ? isDarkMode ? colors.white : 'rgba(237, 243, 255, 1)' : 'transparent',
-            color: page === currentPage ? colors.accent : colors.textPrimary
+            backgroundColor: page === currentPage ? (isDarkMode ? 'rgba(82, 82, 91, 1)' : 'rgba(237, 243, 255, 1)') : 'transparent',
+            color: page === currentPage ? (isDarkMode ? '#FFFFFF' : colors.accent) : colors.textPrimary
           }}>
                 {page}
               </button>)}
