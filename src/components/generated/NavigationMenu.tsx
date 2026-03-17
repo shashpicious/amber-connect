@@ -8,12 +8,12 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   initialMode = 'light'
 }) => {
   console.log('NavigationMenu rendering...');
-  const [activeTab, setActiveTab] = useState('Dashboard');
+  const [activeTab, setActiveTab] = useState('Listings');
   const [isDarkMode, setIsDarkMode] = useState(initialMode === 'dark');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [activeNavigation, setActiveNavigation] = useState('Dashboard');
+  const [activeNavigation, setActiveNavigation] = useState('Listings');
   const [currentPage, setCurrentPage] = useState(1);
   const [campaignsPage, setCampaignsPage] = useState(1);
   const [commissionsPage, setCommissionsPage] = useState(1);
@@ -26,6 +26,10 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   const [listingsSearchQuery, setListingsSearchQuery] = useState('');
   const [listingsProviderFilter, setListingsProviderFilter] = useState('');
   const [selectedListing, setSelectedListing] = useState<any>(null);
+  const [listingsSortField, setListingsSortField] = useState<string>('');
+  const [listingsSortDir, setListingsSortDir] = useState<'asc' | 'desc'>('asc');
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [bookingsPage, setBookingsPage] = useState(1);
   const itemsPerPage = 10;
   const [settingsTab, setSettingsTab] = useState('Brand Identity');
   const [brandColor, setBrandColor] = useState('#015A57');
@@ -33,6 +37,9 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   const clickAudioRef = useRef<HTMLAudioElement | null>(null);
   const [processingAnimationData, setProcessingAnimationData] = useState<any>(null);
   const [isScrambling, setIsScrambling] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [themePreference, setThemePreference] = useState<'light' | 'dark' | 'system'>(initialMode === 'dark' ? 'dark' : 'light');
+  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   // Text scramble effect
   useEffect(() => {
@@ -110,13 +117,13 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     clickAudioRef.current = new Audio('https://storage.googleapis.com/storage.magicpath.ai/global-assets/click-soft-01.mp3');
   }, []);
 
-  // Set default tab to 'Leads' when navigating to Leads page
+  // Set default tab to 'Bookings' when navigating to Bookings page
   useEffect(() => {
-    if (activeNavigation === 'Leads') {
-      // Only set to 'Leads' if currently on a different page's tab (like 'Dashboard')
-      // This allows users to switch between 'Leads' and 'Prequalified Leads' while on Leads page
-      if (activeTab !== 'Leads' && activeTab !== 'Prequalified Leads') {
-        setActiveTab('Leads');
+    if (activeNavigation === 'Bookings') {
+      // Only set to 'Bookings' if currently on a different page's tab
+      // This allows users to switch between 'Bookings' and 'Prequalified Leads' while on Bookings page
+      if (activeTab !== 'Bookings' && activeTab !== 'Prequalified Bookings') {
+        setActiveTab('Bookings');
       }
     }
   }, [activeNavigation]);
@@ -128,6 +135,19 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
       .then(data => setProcessingAnimationData(data))
       .catch(err => console.error('Failed to load processing animation:', err));
   }, []);
+
+  // Close profile menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
+    if (showProfileMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showProfileMenu]);
 
   // Function to modify Lottie animation colors for dark mode
   const getProcessedAnimationData = () => {
@@ -239,34 +259,25 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     }
   };
   const navItems = [{
-    name: 'Dashboard',
-    icon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/9ddcdba4-23a5-4ca7-8298-dd38d3af6175.svg'
-  }, {
-    name: 'Leads',
-    icon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/b180e1ef-0a90-4d54-8be8-d7485798bba5.svg'
-  }, {
-    name: 'Commissions',
-    icon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/d24c3c5c-cbef-4075-8479-4c40bb721d85.svg'
+    name: 'Insights',
+    icon: 'https://www.figma.com/api/mcp/asset/18766df0-273c-436c-acd1-1f66aa409cbe'
   }, {
     name: 'Listings',
-    icon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/4de30599-d28c-4a8b-beed-5dbd6da722c6.svg'
+    icon: 'https://www.figma.com/api/mcp/asset/556926e2-b879-473d-ad86-ed93b4695a8c'
   }, {
-    name: 'Sub-Partners',
-    icon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/2440581a-feec-4524-ba16-2b366210db1e.svg'
+    name: 'Bookings',
+    icon: 'https://www.figma.com/api/mcp/asset/c887a40d-a7fc-447f-8f9f-8e037f89ebaf'
   }, {
-    name: 'Campaigns / Events',
-    icon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/9635bf66-6b5b-4455-a16d-fd2b88a43b84.svg'
+    name: 'Invoices',
+    icon: 'https://www.figma.com/api/mcp/asset/126c7fb9-38d7-4706-9592-60f56c6c8052'
+  }, {
+    name: 'Reviews',
+    icon: 'https://www.figma.com/api/mcp/asset/7ef4ae29-90af-4a5f-b1f2-5f3a0e765abf'
+  }, {
+    name: 'Campaigns',
+    icon: 'https://www.figma.com/api/mcp/asset/b197b3f3-1fec-4dbd-86a2-9791705fb40d'
   }] as any[];
-  const systemItems = [{
-    name: 'Integrations',
-    icon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/985caacd-ac60-4865-a417-6f78e69a71c0.svg'
-  }, {
-    name: 'Support',
-    icon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/2728d541-9f29-4526-922c-5e8e6ed3b5eb.svg'
-  }, {
-    name: 'Settings',
-    icon: 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/52a7ff51-763c-4056-836e-c413b166618b.svg'
-  }] as any[];
+  const systemItems = [] as any[];
   const leadsData = [{
     name: 'Jack alfredo',
     email: 'Jackal@shadcnstudio.com',
@@ -1111,26 +1122,84 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   
   // Listings data
   const listingsData = [
-    { propertyName: 'Connectld1', providerName: 'A & o Hostels', type: 'Student Accommodation' },
-    { propertyName: '360 King Street, Melbourne', providerName: 'Asset Living', type: 'Student Accommodation' },
-    { propertyName: 'HMO Slash Pricing', providerName: 'True Student', type: 'Independent House' },
-    { propertyName: 'Mapbox_Bamio', providerName: 'City Block', type: 'Student Accommodation' },
-    { propertyName: 'Riverside Apartments, Leeds', providerName: 'Park Place', type: 'Independent House' },
-    { propertyName: 'Victoria Point Studios', providerName: 'Neighborhood Living', type: 'Independent House' },
-    { propertyName: 'Inventory Check Complete', providerName: 'Community Stays', type: 'Independent House' },
-    { propertyName: 'Sydney CBD Accommodation', providerName: 'Shopping District Co.', type: 'Student Accommodation' },
-    { propertyName: 'Canary Wharf Residency', providerName: 'Community Stays', type: 'Private Housing' },
-    { propertyName: "King's Cross Studios", providerName: 'City Park Residences', type: 'University Dormitories' },
-    { propertyName: 'Operation Campus Living', providerName: 'Cultural Hub', type: 'Shared Flats' },
-    { propertyName: 'Mayfair Student Living', providerName: 'True Student', type: 'Student Accommodation' },
-    { propertyName: '15 Oxford Street Residences', providerName: 'Asset Living', type: 'Independent House' },
-    { propertyName: 'Central Park Residences', providerName: 'A & o Hostels', type: 'Student Accommodation' },
-    { propertyName: 'Brunswick House', providerName: 'City Block', type: 'Shared Flats' },
-    { propertyName: 'Victoria Gardens', providerName: 'Park Place', type: 'Private Housing' },
-    { propertyName: 'East End Flats', providerName: 'Community Stays', type: 'Independent House' },
-    { propertyName: 'Manchester Metropolitan Hub', providerName: 'Neighborhood Living', type: 'University Dormitories' },
-    { propertyName: 'Nottingham Student Hub', providerName: 'Shopping District Co.', type: 'Student Accommodation' },
-    { propertyName: 'Sheffield Central Living', providerName: 'City Park Residences', type: 'Independent House' },
+    { invoiceNumber: 'INV-2025-0379', invoiceDate: '03/04/2025', totalAmount: '$75.00', balance: '$75.00', dueDate: '03/04/2025', status: 'Paid' },
+    { invoiceNumber: 'INV-2025-0570', invoiceDate: '03/04/2025', totalAmount: '$90.00', balance: '$150.00', dueDate: '03/04/2025', status: 'Overdue' },
+    { invoiceNumber: 'INV-2025-0380', invoiceDate: '03/04/2025', totalAmount: '$125.00', balance: '$200.00', dueDate: '03/04/2025', status: 'Paid' },
+    { invoiceNumber: 'INV-2025-0381', invoiceDate: '03/04/2025', totalAmount: '$45.00', balance: '$300.00', dueDate: '03/04/2025', status: 'Overdue' },
+    { invoiceNumber: 'INV-2025-0382', invoiceDate: '03/04/2025', totalAmount: '$200.00', balance: '$450.00', dueDate: '03/04/2025', status: 'Overdue' },
+    { invoiceNumber: 'INV-2025-0383', invoiceDate: '03/04/2025', totalAmount: '$60.00', balance: '$600.00', dueDate: '03/04/2025', status: 'Paid' },
+    { invoiceNumber: 'INV-2025-0384', invoiceDate: '03/04/2025', totalAmount: '$50.00', balance: '$750.00', dueDate: '03/04/2025', status: 'Paid' },
+    { invoiceNumber: 'INV-2025-0385', invoiceDate: '03/04/2025', totalAmount: '$30.00', balance: '$1000.00', dueDate: '03/04/2025', status: 'Overdue' },
+    { invoiceNumber: 'INV-2025-0386', invoiceDate: '03/04/2025', totalAmount: '$110.00', balance: '$1200.00', dueDate: '03/04/2025', status: 'Paid' },
+    { invoiceNumber: 'INV-2025-0387', invoiceDate: '03/04/2025', totalAmount: '$85.00', balance: '$1500.00', dueDate: '03/04/2025', status: 'Overdue' },
+    { invoiceNumber: 'INV-2025-0388', invoiceDate: '03/04/2025', totalAmount: '$150.00', balance: '$1800.00', dueDate: '03/04/2025', status: 'Paid' },
+    { invoiceNumber: 'INV-2025-0389', invoiceDate: '03/04/2025', totalAmount: '$95.00', balance: '$2000.00', dueDate: '03/04/2025', status: 'Paid' },
+    { invoiceNumber: 'INV-2025-0390', invoiceDate: '03/04/2025', totalAmount: '$40.00', balance: '$2200.00', dueDate: '03/04/2025', status: 'Overdue' },
+    { invoiceNumber: 'INV-2025-0391', invoiceDate: '03/04/2025', totalAmount: '$70.00', balance: '$2500.00', dueDate: '03/04/2025', status: 'Paid' },
+    { invoiceNumber: 'INV-2025-0392', invoiceDate: '03/04/2025', totalAmount: '$55.00', balance: '$2800.00', dueDate: '03/04/2025', status: 'Overdue' },
+    { invoiceNumber: 'INV-2025-0393', invoiceDate: '03/04/2025', totalAmount: '$120.00', balance: '$3000.00', dueDate: '03/04/2025', status: 'Paid' },
+    { invoiceNumber: 'INV-2025-0394', invoiceDate: '03/04/2025', totalAmount: '$65.00', balance: '$3200.00', dueDate: '03/04/2025', status: 'Paid' },
+    { invoiceNumber: 'INV-2025-0395', invoiceDate: '03/04/2025', totalAmount: '$80.00', balance: '$3500.00', dueDate: '03/04/2025', status: 'Overdue' },
+    { invoiceNumber: 'INV-2025-0396', invoiceDate: '03/04/2025', totalAmount: '$100.00', balance: '$3800.00', dueDate: '03/04/2025', status: 'Paid' },
+    { invoiceNumber: 'INV-2025-0397', invoiceDate: '03/04/2025', totalAmount: '$35.00', balance: '$4000.00', dueDate: '03/04/2025', status: 'Overdue' },
+  ] as any[];
+
+  // Reviews data
+  const reviewsData = [
+    { listing: 'Urbanest Tower Bridge, London 1', review: 'The surrounding and general culture of this place is amazing and inclusive which is why you really feel more like an extended family rather than just a regular student accommodation.', rating: 5, studentName: 'Patrick John', source: 'Google', date: '03/04/2025' },
+    { listing: 'Chapter Spitalfields, London', review: 'Great location near the city centre with excellent transport links. The staff were always helpful and the communal areas were well maintained.', rating: 3, studentName: 'Sarah Mitchell', source: 'Facebook', date: '02/28/2025' },
+    { listing: 'iQ Shoreditch, London', review: 'Modern facilities and a vibrant community. The rooftop terrace is a highlight. Only downside is the noise from the street on weekends.', rating: 4, studentName: 'James Chen', source: 'Ambassador', date: '02/15/2025' },
+    { listing: 'Unite Students, Manchester', review: 'Decent value for money but the kitchen appliances could use an upgrade. The location is perfect for university though.', rating: 2, studentName: 'Emily Watson', source: 'Google', date: '03/01/2025' },
+    { listing: 'Vita Student, Edinburgh', review: 'Absolutely loved my stay here. The gym and cinema room were fantastic perks. Would highly recommend to any incoming student.', rating: 5, studentName: 'Liam O\'Brien', source: 'Google', date: '01/22/2025' },
+    { listing: 'CRM Students, Bristol', review: 'The room was spacious and clean. Internet speed was consistently good which was important for my coursework. Friendly neighbours too.', rating: 4, studentName: 'Aisha Patel', source: 'Facebook', date: '02/10/2025' },
+    { listing: 'Collegiate AC, Birmingham', review: 'Mixed experience overall. The building itself is nice but maintenance requests took too long to resolve. Management could be more responsive.', rating: 3, studentName: 'Tom Richards', source: 'Ambassador', date: '03/08/2025' },
+    { listing: 'Fresh Student Living, Leeds', review: 'Perfect for first year students. Made so many friends in the common areas. The weekly events organised by staff were a great touch.', rating: 5, studentName: 'Maria Gonzalez', source: 'Google', date: '01/30/2025' },
+    { listing: 'Nido Student, Glasgow', review: 'The heating system was unreliable during winter months which was frustrating. Otherwise the flat was well designed and comfortable.', rating: 2, studentName: 'David Kim', source: 'Facebook', date: '02/05/2025' },
+    { listing: 'Liberty Living, Nottingham', review: 'Excellent security and a real sense of community. The study rooms were always available when I needed them. Great value.', rating: 4, studentName: 'Rachel Adams', source: 'Google', date: '03/12/2025' },
+    { listing: 'Urbanest Tower Bridge, London 1', review: 'Second year here and still loving it. The management team genuinely cares about residents. Laundry facilities are top notch.', rating: 5, studentName: 'Oliver Brown', source: 'Ambassador', date: '02/20/2025' },
+    { listing: 'Chapter Spitalfields, London', review: 'A bit pricey compared to alternatives but the quality justifies it. The en-suite bathroom and weekly cleaning service are worth it.', rating: 4, studentName: 'Sophie Turner', source: 'Google', date: '01/15/2025' },
+    { listing: 'iQ Shoreditch, London', review: 'Parking was a nightmare and the bike storage was always full. The flat itself was lovely though and I enjoyed living there.', rating: 3, studentName: 'Hassan Ali', source: 'Facebook', date: '03/05/2025' },
+    { listing: 'Unite Students, Manchester', review: 'The welcome week activities helped me settle in quickly. Staff remembered my name which made it feel like home from day one.', rating: 5, studentName: 'Jessica Lee', source: 'Ambassador', date: '02/25/2025' },
+    { listing: 'Vita Student, Edinburgh', review: 'Beautiful views from the upper floors. The all-inclusive bills made budgeting so much easier. Would definitely book again.', rating: 4, studentName: 'Nathan Clarke', source: 'Google', date: '01/28/2025' },
+    { listing: 'CRM Students, Bristol', review: 'Had some issues with noisy neighbours but the RA handled it professionally. The location near the harbour is unbeatable.', rating: 3, studentName: 'Priya Sharma', source: 'Facebook', date: '03/10/2025' },
+    { listing: 'Collegiate AC, Birmingham', review: 'The move-in process was seamless and well organised. Furniture quality is good and the mattress was surprisingly comfortable.', rating: 4, studentName: 'Daniel Wright', source: 'Google', date: '02/18/2025' },
+    { listing: 'Fresh Student Living, Leeds', review: 'Wifi kept dropping during peak hours which was annoying for online lectures. Everything else about the accommodation was solid.', rating: 2, studentName: 'Chloe Martin', source: 'Ambassador', date: '01/20/2025' },
+    { listing: 'Nido Student, Glasgow', review: 'Loved the modern design and the communal kitchen was huge. Met some of my best friends in the shared spaces here.', rating: 5, studentName: 'Ryan Taylor', source: 'Google', date: '03/02/2025' },
+    { listing: 'Liberty Living, Nottingham', review: 'Good for the price point. Nothing fancy but everything works and the location is convenient for campus and the city centre.', rating: 3, studentName: 'Emma Wilson', source: 'Facebook', date: '02/12/2025' },
+    { listing: 'Urbanest Tower Bridge, London 1', review: 'The concierge service is a nice premium touch. Package deliveries were always handled smoothly. Felt very safe living here.', rating: 5, studentName: 'Alex Thompson', source: 'Google', date: '01/25/2025' },
+    { listing: 'Chapter Spitalfields, London', review: 'Fire alarms went off too frequently which was disruptive. Apart from that the accommodation exceeded my expectations.', rating: 3, studentName: 'Megan Davis', source: 'Ambassador', date: '03/15/2025' },
+    { listing: 'iQ Shoreditch, London', review: 'The courtyard garden was a lovely surprise. Perfect for studying outdoors in warmer months. Staff organised great BBQ events.', rating: 4, studentName: 'Chris Evans', source: 'Google', date: '02/08/2025' },
+    { listing: 'Unite Students, Manchester', review: 'Checkout process was stressful with unexpected charges. The living experience itself was fine but the admin side needs work.', rating: 2, studentName: 'Laura Hughes', source: 'Facebook', date: '01/18/2025' },
+    { listing: 'Vita Student, Edinburgh', review: 'Premium student living at its finest. The private dining room booking system was a unique feature I really appreciated.', rating: 5, studentName: 'Ben Cooper', source: 'Ambassador', date: '03/07/2025' },
+  ] as any[];
+
+  // Bookings data
+  const bookingsData = [
+    { amberId: '48489984989', bookingId: '8W88994743', listing: 'Urbanest Tower Bridge, London 1', studentName: 'Patrick John', status: 'Cancelled', moveInDate: '03/04/2025', tenure: '42 Weeks' },
+    { amberId: '48489984990', bookingId: '8W88994744', listing: 'Chapter Spitalfields, London', studentName: 'Sarah Mitchell', status: 'Confirmed', moveInDate: '03/10/2025', tenure: '36 Weeks' },
+    { amberId: '48489984991', bookingId: '8W88994745', listing: 'iQ Shoreditch, London', studentName: 'James Chen', status: 'Processing', moveInDate: '04/01/2025', tenure: '52 Weeks' },
+    { amberId: '48489984992', bookingId: '8W88994746', listing: 'Unite Students, Manchester', studentName: 'Emily Watson', status: 'Cancelled', moveInDate: '03/15/2025', tenure: '42 Weeks' },
+    { amberId: '48489984993', bookingId: '8W88994747', listing: 'Vita Student, Edinburgh', studentName: 'Liam O\'Brien', status: 'Confirmed', moveInDate: '03/20/2025', tenure: '48 Weeks' },
+    { amberId: '48489984994', bookingId: '8W88994748', listing: 'CRM Students, Bristol', studentName: 'Aisha Patel', status: 'Processing', moveInDate: '04/05/2025', tenure: '36 Weeks' },
+    { amberId: '48489984995', bookingId: '8W88994749', listing: 'Collegiate AC, Birmingham', studentName: 'Tom Richards', status: 'Cancelled', moveInDate: '03/08/2025', tenure: '42 Weeks' },
+    { amberId: '48489984996', bookingId: '8W88994750', listing: 'Fresh Student Living, Leeds', studentName: 'Maria Gonzalez', status: 'Confirmed', moveInDate: '03/25/2025', tenure: '52 Weeks' },
+    { amberId: '48489984997', bookingId: '8W88994751', listing: 'Nido Student, Glasgow', studentName: 'David Kim', status: 'Cancelled', moveInDate: '03/12/2025', tenure: '36 Weeks' },
+    { amberId: '48489984998', bookingId: '8W88994752', listing: 'Liberty Living, Nottingham', studentName: 'Rachel Adams', status: 'Confirmed', moveInDate: '04/10/2025', tenure: '48 Weeks' },
+    { amberId: '48489984999', bookingId: '8W88994753', listing: 'Urbanest Tower Bridge, London 1', studentName: 'Oliver Brown', status: 'Processing', moveInDate: '03/18/2025', tenure: '42 Weeks' },
+    { amberId: '48489985000', bookingId: '8W88994754', listing: 'Chapter Spitalfields, London', studentName: 'Sophie Turner', status: 'Cancelled', moveInDate: '03/22/2025', tenure: '36 Weeks' },
+    { amberId: '48489985001', bookingId: '8W88994755', listing: 'iQ Shoreditch, London', studentName: 'Hassan Ali', status: 'Confirmed', moveInDate: '04/15/2025', tenure: '52 Weeks' },
+    { amberId: '48489985002', bookingId: '8W88994756', listing: 'Unite Students, Manchester', studentName: 'Jessica Lee', status: 'Processing', moveInDate: '03/28/2025', tenure: '42 Weeks' },
+    { amberId: '48489985003', bookingId: '8W88994757', listing: 'Vita Student, Edinburgh', studentName: 'Nathan Clarke', status: 'Confirmed', moveInDate: '04/02/2025', tenure: '48 Weeks' },
+    { amberId: '48489985004', bookingId: '8W88994758', listing: 'CRM Students, Bristol', studentName: 'Priya Sharma', status: 'Cancelled', moveInDate: '03/05/2025', tenure: '36 Weeks' },
+    { amberId: '48489985005', bookingId: '8W88994759', listing: 'Collegiate AC, Birmingham', studentName: 'Daniel Wright', status: 'Confirmed', moveInDate: '04/08/2025', tenure: '42 Weeks' },
+    { amberId: '48489985006', bookingId: '8W88994760', listing: 'Fresh Student Living, Leeds', studentName: 'Chloe Martin', status: 'Processing', moveInDate: '03/30/2025', tenure: '52 Weeks' },
+    { amberId: '48489985007', bookingId: '8W88994761', listing: 'Nido Student, Glasgow', studentName: 'Ryan Taylor', status: 'Cancelled', moveInDate: '03/14/2025', tenure: '36 Weeks' },
+    { amberId: '48489985008', bookingId: '8W88994762', listing: 'Liberty Living, Nottingham', studentName: 'Emma Wilson', status: 'Confirmed', moveInDate: '04/12/2025', tenure: '48 Weeks' },
+    { amberId: '48489985009', bookingId: '8W88994763', listing: 'Urbanest Tower Bridge, London 1', studentName: 'Alex Thompson', status: 'Processing', moveInDate: '03/16/2025', tenure: '42 Weeks' },
+    { amberId: '48489985010', bookingId: '8W88994764', listing: 'Chapter Spitalfields, London', studentName: 'Megan Davis', status: 'Confirmed', moveInDate: '04/18/2025', tenure: '36 Weeks' },
+    { amberId: '48489985011', bookingId: '8W88994765', listing: 'iQ Shoreditch, London', studentName: 'Chris Evans', status: 'Cancelled', moveInDate: '03/09/2025', tenure: '52 Weeks' },
+    { amberId: '48489985012', bookingId: '8W88994766', listing: 'Unite Students, Manchester', studentName: 'Laura Hughes', status: 'Processing', moveInDate: '04/20/2025', tenure: '42 Weeks' },
+    { amberId: '48489985013', bookingId: '8W88994767', listing: 'Vita Student, Edinburgh', studentName: 'Ben Cooper', status: 'Confirmed', moveInDate: '03/26/2025', tenure: '48 Weeks' },
   ] as any[];
 
   // Campaigns/Events data
@@ -1920,17 +1989,41 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
 
   // Filter Listings data
   const filteredListingsData = listingsData.filter((item: any) => {
-    if (listingsSearchQuery && !item.propertyName.toLowerCase().includes(listingsSearchQuery.toLowerCase())) return false;
-    if (listingsProviderFilter && item.providerName !== listingsProviderFilter) return false;
+    if (listingsSearchQuery && !item.invoiceNumber.toLowerCase().includes(listingsSearchQuery.toLowerCase())) return false;
+    if (listingsProviderFilter && item.status !== listingsProviderFilter) return false;
     return true;
   });
 
+  // Sort listings data
+  const sortedListingsData = [...filteredListingsData].sort((a: any, b: any) => {
+    if (!listingsSortField) return 0;
+    let valA = a[listingsSortField];
+    let valB = b[listingsSortField];
+    if (listingsSortField === 'totalAmount' || listingsSortField === 'balance') {
+      valA = parseFloat(valA.replace(/[^0-9.]/g, ''));
+      valB = parseFloat(valB.replace(/[^0-9.]/g, ''));
+    }
+    if (valA < valB) return listingsSortDir === 'asc' ? -1 : 1;
+    if (valA > valB) return listingsSortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const handleListingsSort = (field: string) => {
+    if (listingsSortField === field) {
+      setListingsSortDir(listingsSortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setListingsSortField(field);
+      setListingsSortDir('asc');
+    }
+    setListingsPage(1);
+  };
+
   // Listings pagination logic
-  const listingsTotalItems = filteredListingsData.length;
+  const listingsTotalItems = sortedListingsData.length;
   const listingsTotalPages = Math.ceil(listingsTotalItems / itemsPerPage);
   const listingsStartIndex = (listingsPage - 1) * itemsPerPage;
   const listingsEndIndex = listingsStartIndex + itemsPerPage;
-  const currentListingsData = filteredListingsData.slice(listingsStartIndex, listingsEndIndex);
+  const currentListingsData = sortedListingsData.slice(listingsStartIndex, listingsEndIndex);
   const listingsStartItem = listingsStartIndex + 1;
   const listingsEndItem = Math.min(listingsEndIndex, listingsTotalItems);
 
@@ -1969,18 +2062,74 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     }
     return pages;
   };
-  const listingsProviders = Array.from(new Set(listingsData.map((d: any) => d.providerName)));
+  const listingsProviders = Array.from(new Set(listingsData.map((d: any) => d.status)));
+
+  // Reviews pagination logic
+  const reviewsTotalItems = reviewsData.length;
+  const reviewsTotalPages = Math.ceil(reviewsTotalItems / itemsPerPage);
+  const reviewsStartIndex = (reviewsPage - 1) * itemsPerPage;
+  const reviewsEndIndex = reviewsStartIndex + itemsPerPage;
+  const currentReviewsData = reviewsData.slice(reviewsStartIndex, reviewsEndIndex);
+  const reviewsStartItem = reviewsStartIndex + 1;
+  const reviewsEndItem = Math.min(reviewsEndIndex, reviewsTotalItems);
+  const handleReviewsPrevious = () => { if (reviewsPage > 1) setReviewsPage(reviewsPage - 1); };
+  const handleReviewsNext = () => { if (reviewsPage < reviewsTotalPages) setReviewsPage(reviewsPage + 1); };
+  const handleReviewsPageClick = (page: number) => { if (page !== -1) setReviewsPage(page); };
+  const getReviewsPageNumbers = () => {
+    const pages: number[] = [];
+    const maxVisible = 4;
+    if (reviewsTotalPages <= maxVisible) { for (let i = 1; i <= reviewsTotalPages; i++) pages.push(i); }
+    else {
+      if (reviewsPage <= 2) { for (let i = 1; i <= 3; i++) pages.push(i); pages.push(-1); pages.push(reviewsTotalPages); }
+      else if (reviewsPage >= reviewsTotalPages - 1) { pages.push(1); pages.push(-1); for (let i = reviewsTotalPages - 2; i <= reviewsTotalPages; i++) pages.push(i); }
+      else { pages.push(1); pages.push(-1); pages.push(reviewsPage - 1); pages.push(reviewsPage); pages.push(reviewsPage + 1); pages.push(-1); pages.push(reviewsTotalPages); }
+    }
+    return pages;
+  };
+
+  // Bookings pagination logic
+  const bookingsTotalItems = bookingsData.length;
+  const bookingsTotalPages = Math.ceil(bookingsTotalItems / itemsPerPage);
+  const bookingsStartIndex = (bookingsPage - 1) * itemsPerPage;
+  const bookingsEndIndex = bookingsStartIndex + itemsPerPage;
+  const currentBookingsData = bookingsData.slice(bookingsStartIndex, bookingsEndIndex);
+  const bookingsStartItem = bookingsStartIndex + 1;
+  const bookingsEndItem = Math.min(bookingsEndIndex, bookingsTotalItems);
+  const handleBookingsPrevious = () => { if (bookingsPage > 1) setBookingsPage(bookingsPage - 1); };
+  const handleBookingsNext = () => { if (bookingsPage < bookingsTotalPages) setBookingsPage(bookingsPage + 1); };
+  const handleBookingsPageClick = (page: number) => { if (page !== -1) setBookingsPage(page); };
+  const getBookingsPageNumbers = () => {
+    const pages: number[] = [];
+    const maxVisible = 4;
+    if (bookingsTotalPages <= maxVisible) { for (let i = 1; i <= bookingsTotalPages; i++) pages.push(i); }
+    else {
+      if (bookingsPage <= 2) { for (let i = 1; i <= 3; i++) pages.push(i); pages.push(-1); pages.push(bookingsTotalPages); }
+      else if (bookingsPage >= bookingsTotalPages - 1) { pages.push(1); pages.push(-1); for (let i = bookingsTotalPages - 2; i <= bookingsTotalPages; i++) pages.push(i); }
+      else { pages.push(1); pages.push(-1); pages.push(bookingsPage - 1); pages.push(bookingsPage); pages.push(bookingsPage + 1); pages.push(-1); pages.push(bookingsTotalPages); }
+    }
+    return pages;
+  };
+
+  const renderStars = (count: number) => {
+    return Array.from({ length: 5 }).map((_, i) => (
+      i < count
+        ? <img key={i} src="/assets/star group.svg" alt="★" style={{ width: '16px', height: '16px' }} />
+        : <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={colors.border} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+    ));
+  };
 
   const getStatusBadge = (status: string) => {
     let bgColor = 'rgba(227, 146, 25, 0.1)';
     let textColor = 'rgba(217, 119, 6, 1)';
-    if (status === 'Booked' || status === 'Paid' || status === 'Active') {
+    if (status === 'Booked' || status === 'Paid' || status === 'Active' || status === 'Confirmed') {
       bgColor = 'rgba(22, 163, 74, 0.1)';
       textColor = 'rgba(22, 163, 74, 1)';
-    } else if (status === 'Not Booked' || status === 'Unpaid' || status === 'Inactive') {
+    } else if (status === 'Not Booked' || status === 'Unpaid' || status === 'Inactive' || status === 'Overdue' || status === 'Cancelled') {
       bgColor = 'rgba(224, 52, 52, 0.1)';
       textColor = 'rgba(220, 38, 38, 1)';
-    } else if (status === 'Partially_paid') {
+    } else if (status === 'Partially_paid' || status === 'Processing') {
       bgColor = 'rgba(227, 146, 25, 0.1)';
       textColor = 'rgba(217, 119, 6, 1)';
     }
@@ -2037,9 +2186,9 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                src={isDarkMode ? "https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/a37d54b8-199b-45da-a0df-bb52b93313f4.svg" : "https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/0ae077f3-aa72-4d4b-8e69-1f00db96b9a1.svg"}
-                alt="Logo"
-                style={{ width: '110px' }}
+                src="/assets/AmberConnect.png"
+                alt="Amber Connect Logo"
+                style={{ width: '150px', height: 'auto' }}
               />
             )}
           </AnimatePresence>
@@ -2115,6 +2264,8 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                   src={item.icon}
                   style={{
                     width: '16px',
+                    height: '16px',
+                    objectFit: 'contain',
                     flexShrink: 0
                   }}
                   alt={item.name}
@@ -2145,97 +2296,6 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               </motion.button>)}
           </div>
 
-          {!isCollapsed && (
-          <div style={{
-          marginTop: '24px',
-          paddingLeft: '12px',
-          marginBottom: '8px'
-        }}>
-            <span style={{
-            fontSize: '12px',
-            fontWeight: 500,
-            color: colors.textSecondary,
-            letterSpacing: '0.5px',
-            opacity: 0.7
-          }}>SYSTEM</span>
-          </div>
-          )}
-          {isCollapsed && <div style={{ marginTop: '16px', height: '1px', background: colors.border, margin: '16px 8px 8px' }} />}
-
-          <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '4px'
-        }}>
-            {systemItems.map(item => <motion.button
-              key={item.name}
-              onClick={() => {
-                playClickSound();
-                setActiveNavigation(item.name);
-              }}
-              whileHover={{ scale: 1.02, x: isCollapsed ? 0 : 2 }}
-              whileTap={{ scale: 0.98 }}
-              title={isCollapsed ? item.name : undefined}
-              style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: isCollapsed ? 'center' : 'flex-start',
-            gap: '8px',
-            padding: isCollapsed ? '8px' : '8px 12px',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-                backgroundColor: 'transparent',
-                boxShadow: 'none',
-                borderWidth: '0px',
-            borderStyle: 'solid',
-            borderColor: colors.border,
-            width: '100%',
-            textAlign: 'left'
-              }}
-              animate={{
-                backgroundColor: activeNavigation === item.name ? isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white' : 'transparent',
-                boxShadow: activeNavigation === item.name ? '0px 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
-                borderWidth: activeNavigation === item.name ? '1px' : '0px'
-              }}
-              transition={{
-                duration: 0.3,
-                ease: [0.4, 0, 0.2, 1]
-              }}
-            >
-                <motion.img
-                  src={item.icon}
-                  style={{
-                    width: '16px',
-                    flexShrink: 0
-                  }}
-                  alt={item.name}
-                  animate={{
-                    opacity: activeNavigation === item.name ? 1 : (isDarkMode ? 0.85 : 0.6),
-                    filter: getIconFilter(activeNavigation === item.name)
-                  }}
-                  transition={{
-                    duration: 0.2,
-                    ease: [0.4, 0, 0.2, 1]
-                  }}
-                />
-                {!isCollapsed && (
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  style={{
-              fontSize: '14px',
-              fontWeight: 500,
-              fontFamily: '"Geist", sans-serif',
-              whiteSpace: 'nowrap',
-              color: activeNavigation === item.name ? isDarkMode ? colors.white : 'rgba(10, 10, 10, 1)' : colors.textMuted
-                  }}
-                >
-                  {item.name}
-                </motion.span>
-                )}
-              </motion.button>)}
-          </div>
         </div>
 
         <footer style={{
@@ -2415,15 +2475,21 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
           </>)}
 
           {/* User Info */}
-          <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: isCollapsed ? 'center' : 'flex-start',
-          gap: '8px',
-          padding: '8px',
-          borderRadius: '6px',
-          cursor: 'pointer'
-        }}>
+          <div
+            onClick={() => setShowProfileMenu(prev => !prev)}
+            style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: isCollapsed ? 'center' : 'flex-start',
+            gap: '8px',
+            padding: '8px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            backgroundColor: showProfileMenu
+              ? (isDarkMode ? 'rgba(39, 39, 42, 1)' : 'rgba(244, 244, 245, 1)')
+              : 'transparent',
+            transition: 'background-color 0.15s ease'
+          }}>
             <div style={{
             width: '32px',
             height: '32px',
@@ -2471,6 +2537,149 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
         </footer>
       </motion.aside>
 
+      {/* Profile Menu Popup */}
+      <AnimatePresence>
+        {showProfileMenu && (
+          <motion.div
+            ref={profileMenuRef}
+            initial={{ opacity: 0, y: 8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.97 }}
+            transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+            style={{
+              position: 'absolute',
+              bottom: '60px',
+              left: '8px',
+              width: '240px',
+              backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'white',
+              border: `1px solid ${colors.border}`,
+              borderRadius: '10px',
+              boxShadow: '0px 4px 6px -1px rgba(0,0,0,0.1), 0px 2px 4px -2px rgba(0,0,0,0.1)',
+              zIndex: 100,
+              overflow: 'hidden'
+            }}
+          >
+            {/* Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '9px',
+              padding: '12px',
+              backgroundColor: isDarkMode ? 'rgba(39, 39, 42, 1)' : 'rgba(245, 245, 245, 1)',
+              borderBottom: `1px solid ${colors.border}`,
+            }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '10px', overflow: 'hidden', flexShrink: 0 }}>
+                <img src="/assets/profile-shashpicious.jpg" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Avatar" />
+              </div>
+              <div style={{ flex: 1, overflow: 'hidden' }}>
+                <div style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '20px' }}>shashpicious</div>
+                <div style={{ fontSize: '12px', fontWeight: 300, color: colors.textSecondary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '16px' }}>png.shashi@gmail.com</div>
+              </div>
+            </div>
+
+            {/* Top Menu Items */}
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="5.5" r="2.5" stroke={colors.textPrimary} strokeWidth="1.3" />
+                  <path d="M2.5 13.5C2.5 11.015 5.015 9 8 9s5.5 2.015 5.5 4.5" stroke={colors.textPrimary} strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Account Details</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="5.5" cy="5" r="2" stroke={colors.textPrimary} strokeWidth="1.3" />
+                  <circle cx="10.5" cy="5" r="2" stroke={colors.textPrimary} strokeWidth="1.3" />
+                  <path d="M1 13.5c0-2.209 2.015-4 4.5-4M15 13.5c0-2.209-2.015-4-4.5-4M8 13.5c0-2.209 1.119-4 2.5-4" stroke={colors.textPrimary} strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Teams</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M9 2h5v5M14 2L8 8M6.5 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1V9.5" stroke={colors.textPrimary} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Visit amber student</span>
+              </div>
+            </div>
+
+            {/* Separator */}
+            <div style={{ height: '1px', backgroundColor: colors.border }} />
+
+            {/* Bottom Menu Items */}
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '13px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3M11 11l3-3-3-3M14 8H6" stroke="#EF4444" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Log Out</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <circle cx="8" cy="8" r="3" stroke={colors.textPrimary} strokeWidth="1.3" />
+                    <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06" stroke={colors.textPrimary} strokeWidth="1.3" strokeLinecap="round" />
+                  </svg>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Theme</span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  backgroundColor: isDarkMode ? 'rgba(39, 39, 42, 1)' : 'rgba(245, 245, 245, 1)',
+                  borderRadius: '10px',
+                  padding: '3px',
+                  gap: '1px'
+                }}>
+                  {/* Light */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setIsDarkMode(false); setThemePreference('light'); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: '28px', height: '24px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                      backgroundColor: themePreference === 'light' ? (isDarkMode ? 'rgba(10,10,10,1)' : 'white') : 'transparent',
+                      boxShadow: themePreference === 'light' ? '0px 1px 3px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)' : 'none',
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <circle cx="8" cy="8" r="3" stroke={colors.textPrimary} strokeWidth="1.4" />
+                      <path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.05 1.05M11.55 11.55l1.05 1.05M3.4 12.6l1.05-1.05M11.55 4.45l1.05-1.05" stroke={colors.textPrimary} strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                  {/* Dark */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setIsDarkMode(true); setThemePreference('dark'); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: '28px', height: '24px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                      backgroundColor: themePreference === 'dark' ? (isDarkMode ? 'rgba(10,10,10,1)' : 'white') : 'transparent',
+                      boxShadow: themePreference === 'dark' ? '0px 1px 3px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)' : 'none',
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path d="M13.5 9.5A6 6 0 016.5 2.5a6.5 6.5 0 107 7z" stroke={colors.textPrimary} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  {/* System */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setThemePreference('system'); setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: '28px', height: '24px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                      backgroundColor: themePreference === 'system' ? (isDarkMode ? 'rgba(10,10,10,1)' : 'white') : 'transparent',
+                      boxShadow: themePreference === 'system' ? '0px 1px 3px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)' : 'none',
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <rect x="1.5" y="2" width="13" height="9" rx="1.5" stroke={colors.textPrimary} strokeWidth="1.4" />
+                      <path d="M5.5 14h5M8 11v3" stroke={colors.textPrimary} strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Main Content */}
       <main
         style={{
@@ -2503,6 +2712,76 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               </div>
             </header>
 
+            {/* Listings Stats Banner */}
+            <div style={{
+              padding: '16px 24px',
+              display: 'flex',
+              alignItems: 'stretch',
+              backgroundColor: colors.bg,
+              borderBottom: `1px solid ${colors.border}`,
+            }}>
+              {/* Stat 1: Total Amount Pending */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Total Amount Pending</span>
+                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>$33,474</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>-3.2%</span>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14 6L6 14M6 14H11M6 14V9" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#9333ea', width: '100%' }} />
+              </div>
+
+              {/* Divider 1 */}
+              <div style={{ width: '1px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}`, margin: '0 24px' }} />
+
+              {/* Stat 2: Total Invoices Pending */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Total Invoices Pending</span>
+                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>12</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>-6.4%</span>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14 6L6 14M6 14H11M6 14V9" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#22d3ee', width: '100%' }} />
+              </div>
+
+              {/* Divider 2 */}
+              <div style={{ width: '1px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}`, margin: '0 24px' }} />
+
+              {/* Stat 3: Total Amount Overdue */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Total Amount Overdue</span>
+                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>$3,474</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>+0.8%</span>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 14L14 6M14 6H9M14 6V11" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#9333ea', width: '100%' }} />
+              </div>
+
+              {/* Divider 3 */}
+              <div style={{ width: '1px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}`, margin: '0 24px' }} />
+
+              {/* Stat 4: Total Invoices Overdue */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Total Invoices Overdue</span>
+                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>08</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>-3.2%</span>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14 6L6 14M6 14H11M6 14V9" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#22d3ee', width: '100%' }} />
+              </div>
+            </div>
+
             {/* Listings Filter / Search Bar */}
             <div style={{
               height: '68px',
@@ -2533,7 +2812,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                   type="text"
                   value={listingsSearchQuery}
                   onChange={(e) => { setListingsSearchQuery(e.target.value); setListingsPage(1); }}
-                  placeholder="Property Name"
+                  placeholder="Invoice Number"
                   style={{
                     flex: 1,
                     border: 'none',
@@ -2578,10 +2857,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                       minWidth: '140px'
                     }}
                   >
-                    <option value="">Provider Name</option>
-                    {listingsProviders.map((p: any) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
+                    <option value="">Invoice Date</option>
                   </select>
                   <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
                 </div>
@@ -2602,7 +2878,33 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                       minWidth: '130px'
                     }}
                   >
-                    <option value="">Regions (10)</option>
+                    <option value="">Due Date</option>
+                  </select>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={listingsProviderFilter}
+                    onChange={(e) => { setListingsProviderFilter(e.target.value); setListingsPage(1); }}
+                    style={{
+                      padding: '6px 32px 6px 12px',
+                      border: `1px solid ${colors.border}`,
+                      borderRadius: '8px',
+                      background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                      color: colors.textPrimary,
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      fontFamily: '"Geist", sans-serif',
+                      cursor: 'pointer',
+                      appearance: 'none',
+                      outline: 'none',
+                      minWidth: '130px'
+                    }}
+                  >
+                    <option value="">Status</option>
+                    {listingsProviders.map((p: any) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
                   </select>
                   <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
                 </div>
@@ -2626,13 +2928,13 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                       borderBottom: `1px solid ${colors.border}`,
                       height: '42px'
                     }}>
-                      <th style={{ width: '49px', padding: '0 8px', textAlign: 'center', borderBottom: `1px solid ${colors.border}` }}>
-                        <input type="checkbox" style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: colors.accent }} />
-                      </th>
-                      <th style={{ width: '368px', padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Property Name</th>
-                      <th style={{ padding: '0 16px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Provider Name</th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Type</th>
-                      <th style={{ width: '140px', padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Manage</th>
+                      <th style={{ padding: '0 16px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Invoice Number</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}`, cursor: 'pointer' }} onClick={() => handleListingsSort('invoiceDate')}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>Invoice Date <svg width="12" height="12" viewBox="0 0 13.5 12.1667" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.75 8.75L10.0833 11.4167M10.0833 11.4167L7.41667 8.75M10.0833 11.4167V0.75M0.75 3.41667L3.41667 0.75M3.41667 0.75L6.08333 3.41667M3.41667 0.75V11.4167" stroke={colors.textSecondary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span></th>
+                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}`, cursor: 'pointer' }} onClick={() => handleListingsSort('totalAmount')}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>Total Amount <svg width="12" height="12" viewBox="0 0 13.5 12.1667" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.75 8.75L10.0833 11.4167M10.0833 11.4167L7.41667 8.75M10.0833 11.4167V0.75M0.75 3.41667L3.41667 0.75M3.41667 0.75L6.08333 3.41667M3.41667 0.75V11.4167" stroke={colors.textSecondary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span></th>
+                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}`, cursor: 'pointer' }} onClick={() => handleListingsSort('balance')}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>Balance <svg width="12" height="12" viewBox="0 0 13.5 12.1667" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.75 8.75L10.0833 11.4167M10.0833 11.4167L7.41667 8.75M10.0833 11.4167V0.75M0.75 3.41667L3.41667 0.75M3.41667 0.75L6.08333 3.41667M3.41667 0.75V11.4167" stroke={colors.textSecondary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span></th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}`, cursor: 'pointer' }} onClick={() => handleListingsSort('dueDate')}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>Due Date <svg width="12" height="12" viewBox="0 0 13.5 12.1667" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.75 8.75L10.0833 11.4167M10.0833 11.4167L7.41667 8.75M10.0833 11.4167V0.75M0.75 3.41667L3.41667 0.75M3.41667 0.75L6.08333 3.41667M3.41667 0.75V11.4167" stroke={colors.textSecondary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span></th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Status</th>
+                      <th style={{ width: '140px', padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2646,36 +2948,17 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDarkMode ? 'rgba(23, 23, 23, 0.6)' : 'rgba(250, 250, 250, 0.7)'; }}
                         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = colors.bg; }}
                       >
-                        <td style={{ padding: '0 8px', textAlign: 'center' }}>
-                          <input type="checkbox" style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: colors.accent }} />
-                        </td>
-                        <td style={{ padding: '0 8px' }}>
-                          <button
-                            onClick={() => playClickSound()}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              padding: 0,
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              fontWeight: 500,
-                              color: colors.accent,
-                              fontFamily: '"Geist", sans-serif',
-                              textAlign: 'left',
-                              maxWidth: '350px',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}
-                          >{item.propertyName}</button>
-                        </td>
-                        <td style={{ padding: '0 16px', fontSize: '14px', fontWeight: 400, color: colors.textPrimary, fontFamily: '"Geist", sans-serif' }}>{item.providerName}</td>
-                        <td style={{ padding: '0 8px', fontSize: '14px', fontWeight: 400, color: colors.textPrimary, fontFamily: '"Geist", sans-serif' }}>{item.type}</td>
+                        <td style={{ padding: '0 16px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif' }}>{item.invoiceNumber}</td>
+                        <td style={{ padding: '8px 8px', fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist Mono"' }}>{item.invoiceDate}</td>
+                        <td style={{ padding: '0 8px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', textAlign: 'center' }}>{item.totalAmount}</td>
+                        <td style={{ padding: '0 8px', fontSize: '14px', fontWeight: 400, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', textAlign: 'center' }}>{item.balance}</td>
+                        <td style={{ padding: '8px 8px', fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist Mono"' }}>{item.dueDate}</td>
+                        <td style={{ padding: '0 8px' }}>{getStatusBadge(item.status)}</td>
                         <td style={{ padding: '0 8px', textAlign: 'center' }}>
                           <button
-                            onClick={() => { playClickSound(); setSelectedListing(item); }}
+                            onClick={() => { playClickSound(); }}
                             style={{
-                              padding: '4px 8px',
+                              padding: '4px 12px',
                               border: `1px solid ${colors.border}`,
                               borderRadius: '8px',
                               backgroundColor: isDarkMode ? 'rgba(39, 39, 42, 1)' : 'rgba(245, 245, 245, 1)',
@@ -2686,9 +2969,15 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                               cursor: 'pointer',
                               height: '26px',
                               display: 'inline-flex',
-                              alignItems: 'center'
+                              alignItems: 'center',
+                              gap: '4px'
                             }}
-                          >See Details</button>
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={colors.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+                            </svg>
+                            Download
+                          </button>
                         </td>
                       </motion.tr>
                     ))}
@@ -2758,7 +3047,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               </div>
             </footer>
           </>
-        ) : activeNavigation === 'Commissions' ? (
+        ) : activeNavigation === 'Invoices' ? (
           <>
             {/* Commissions Header */}
             <header style={{
@@ -2801,7 +3090,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                     color: colors.textPrimary,
                     fontFamily: '"Geist Mono"',
                     textTransform: 'uppercase'
-                  }}>Commissions</span>
+                  }}>Invoices</span>
                 </div>
               </div>
               <div style={{
@@ -3144,7 +3433,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               </div>
             </footer>
           </>
-        ) : activeNavigation === 'Campaigns / Events' ? (
+        ) : activeNavigation === 'Campaigns' ? (
           <>
             {/* Campaigns/Events Header */}
             <header style={{
@@ -3187,7 +3476,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                     color: colors.textPrimary,
                     fontFamily: '"Geist Mono"',
                     textTransform: 'uppercase'
-                  }}>Campaigns / Events</span>
+                  }}>Campaigns</span>
                 </div>
               </div>
               <div style={{
@@ -3230,7 +3519,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               </div>
             </header>
 
-            <PageSection pageKey="Campaigns / Events">
+            <PageSection pageKey="Campaigns">
             {/* Campaigns/Events Table */}
             <div style={{
               flex: 1,
@@ -3471,9 +3760,9 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
             </footer>
             </PageSection>
           </>
-        ) : activeNavigation === 'Sub-Partners' ? (
+        ) : activeNavigation === 'Reviews' ? (
           <>
-            {/* Sub-Partners Header */}
+            {/* Reviews Header */}
             <header style={{
               height: '56px',
               padding: '0 24px',
@@ -3481,301 +3770,249 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               borderBottom: `1px solid ${colors.border}`,
-              backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)'
+              backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)',
+              flexShrink: 0
             }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px'
-              }}>
-                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg" style={{
-                  width: '20px'
-                }} alt="back" />
-                <div style={{
-                  height: '16px',
-                  borderLeft: `1px solid ${colors.border}`
-                }} />
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <span style={{
-                    fontSize: '14px',
-                    color: colors.textSecondary,
-                    fontFamily: '"Geist Mono"',
-                    textTransform: 'uppercase'
-                  }}>Dashboard</span>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/42fc4aca-b2d6-4358-bd46-3ec69e3c9773.svg" style={{
-                    width: '14px'
-                  }} />
-                  <span style={{
-                    fontSize: '14px',
-                    color: colors.textPrimary,
-                    fontFamily: '"Geist Mono"',
-                    textTransform: 'uppercase'
-                  }}>Sub-Partners</span>
-            </div>
-          </div>
-          <div style={{
-          display: 'flex',
-          alignItems: 'center',
-                gap: '16px'
-              }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg" style={{ width: '20px' }} alt="back" />
+                <div style={{ height: '20px', borderLeft: `1px solid ${colors.border}` }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist Mono"', textTransform: 'uppercase' }}>Dashboard</span>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/42fc4aca-b2d6-4358-bd46-3ec69e3c9773.svg" style={{ width: '14px' }} />
+                  <span style={{ fontSize: '14px', color: colors.textPrimary, fontFamily: '"Geist Mono"', textTransform: 'uppercase' }}>Reviews</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <button style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 12px',
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '8px',
-                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-          cursor: 'pointer'
-        }}>
-                  <img src={isDarkMode ? "https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/a7aea9d4-4862-4777-a667-d1f47c0a09a6.svg" : "https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/515ca86f-0c62-489e-ac2f-446ec51a901e.svg"} style={{
-                    width: '20px'
-                  }} />
-                  <span style={{
-                    color: isDarkMode ? 'white' : 'rgba(10, 10, 10, 1)',
-                    fontSize: '14px',
-                    fontWeight: 500
-                  }}>Export</span>
+                  display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px',
+                  border: `1px solid ${colors.border}`, borderRadius: '8px',
+                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white', cursor: 'pointer'
+                }}>
+                  <img src={isDarkMode ? "https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/a7aea9d4-4862-4777-a667-d1f47c0a09a6.svg" : "https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/515ca86f-0c62-489e-ac2f-446ec51a901e.svg"} style={{ width: '20px' }} />
+                  <span style={{ color: isDarkMode ? 'white' : 'rgba(10, 10, 10, 1)', fontSize: '14px', fontWeight: 500 }}>Export</span>
                 </button>
               </div>
             </header>
 
-            <PageSection pageKey="Sub-Partners">
-            {/* Sub-Partners Table */}
+            <PageSection pageKey="Reviews">
+            {/* Reviews Stats Banner */}
             <div style={{
-              flex: 1,
-              overflow: 'auto',
-              borderTop: `1px solid ${colors.border}`
+              padding: '16px 24px',
+              display: 'flex',
+              alignItems: 'stretch',
+              backgroundColor: colors.bg,
+              borderBottom: `1px solid ${colors.border}`,
             }}>
-              <table style={{
-                width: '100%',
-                borderCollapse: 'collapse'
-              }}>
-                <thead>
-                  <tr style={{
-                    backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)',
-                    borderBottom: `1px solid ${colors.border}`
-                  }}>
-                    <th style={{
-                      textAlign: 'left',
-                      padding: '12px 24px',
-                      fontSize: '13px',
-                      color: colors.textSecondary,
-                      fontFamily: '"Geist Mono"',
-                      fontWeight: 500
-                    }}>NAME</th>
-                    <th style={{
-                      textAlign: 'left',
-                      padding: '12px 8px',
-                      fontSize: '13px',
-                      color: colors.textSecondary,
-                      fontFamily: '"Geist Mono"',
-                      fontWeight: 500
-                    }}>STATUS</th>
-                    <th style={{
-                      textAlign: 'left',
-                      padding: '12px 8px',
-                      fontSize: '13px',
-                      color: colors.textSecondary,
-                      fontFamily: '"Geist Mono"',
-                      fontWeight: 500
-                    }}>ROLE</th>
-                    <th style={{
-                      textAlign: 'left',
-                      padding: '12px 8px',
-                      fontSize: '13px',
-                      color: colors.textSecondary,
-                      fontFamily: '"Geist Mono"',
-                      fontWeight: 500
-                    }}>SHARING LINK</th>
-                    <th style={{
-                      textAlign: 'right',
-                      padding: '12px 24px',
-                      fontSize: '13px',
-                      color: colors.textSecondary,
-                      fontFamily: '"Geist Mono"',
-                      fontWeight: 500
-                    }}>ACTION</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentCampaignsData.map((campaign, i) => <motion.tr
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{
-                      duration: 0.3,
-                      delay: i * 0.03,
-                      ease: [0.4, 0, 0.2, 1]
-                    }}
-                    style={{
-                      borderBottom: `1px solid ${colors.border}`
-                    }}
-                  >
-                    <td style={{
-                      padding: '8px 24px'
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px'
-        }}>
-            <div style={{
-            width: '32px',
-            height: '32px',
-                          borderRadius: '50%',
-                          backgroundColor: getAvatarColors(i).bg,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          <span style={{
-                            color: getAvatarColors(i).text,
-                            fontSize: '14px',
-                            fontWeight: 500
-                          }}>{campaign.initial}</span>
-            </div>
-            <div style={{
-                          display: 'flex',
-                          flexDirection: 'column'
-                        }}>
-                          <span style={{
-                            fontSize: '14px',
-                            fontWeight: 500,
-                            color: colors.textPrimary
-                          }}>{campaign.name}</span>
-                          <span style={{
-                            fontSize: '14px',
-                            color: colors.textSecondary
-                          }}>{campaign.email}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{
-                      padding: '8px 8px'
-                    }}>{getStatusBadge(campaign.status)}</td>
-                    <td style={{
-                      padding: '8px 8px',
-                      fontSize: '14px',
-                      color: colors.textPrimary
-                    }}>{campaign.role}</td>
-                    <td style={{
-                      padding: '8px 8px'
-                    }}>
-                      <button style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '4px 8px',
-                        backgroundColor: 'transparent',
-                        color: 'rgba(12, 99, 248, 1)',
-                        border: '1px solid rgba(12, 99, 248, 1)',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: 500
-                      }}>
-                        Refer
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M2.5 9.5L9.5 2.5M9.5 2.5H4.5M9.5 2.5V7.5" stroke="rgba(12, 99, 248, 1)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
-                    </td>
-                    <td style={{
-                      padding: '8px 24px',
-                      textAlign: 'right'
-                    }}>
-                      <button style={{
-                        padding: '4px 12px',
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: '6px',
-                        background: 'transparent',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: 500,
-                        color: colors.textPrimary
-                      }}>Edit Details</button>
-                    </td>
-                  </motion.tr>)}
-                </tbody>
-              </table>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Average Rating</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <img src="/assets/star.svg" alt="star" style={{ width: '20px', height: '20px' }} />
+                    <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>4.7</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>-3.2%</span>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14 6L6 14M6 14H11M6 14V9" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#9333ea', width: '100%' }} />
+              </div>
+
+              <div style={{ width: '1px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}`, margin: '0 24px' }} />
+
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Total Ratings</span>
+                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>25</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>-6.4%</span>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14 6L6 14M6 14H11M6 14V9" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#22d3ee', width: '100%' }} />
+              </div>
+
+              <div style={{ flex: 3 }} />
             </div>
 
-            {/* Sub-Partners Pagination Footer */}
-            <footer style={{
+            {/* Reviews Filter Bar */}
+            <div style={{
               height: '68px',
               padding: '0 24px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              borderTop: `1px solid ${colors.border}`,
-              marginTop: 'auto',
-              backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'rgba(255, 255, 255, 1)'
+              borderBottom: `1px solid ${colors.border}`,
+              backgroundColor: colors.bg,
             }}>
-              <span style={{
-                fontSize: '14px',
-                color: colors.textSecondary
-              }}>Showing {campaignsStartItem} to {campaignsEndItem} of {campaignsTotalItems} entries</span>
+              {/* Search Input */}
               <div style={{
+                width: '320px',
+                height: '36px',
                 display: 'flex',
-                gap: '4px'
+                alignItems: 'center',
+                gap: '6px',
+                padding: '0 8px',
+                border: `1px solid ${colors.border}`,
+                borderRadius: '8px',
+                backgroundColor: colors.bg,
+                boxShadow: '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
               }}>
-                <button onClick={handleCampaignsPrevious} disabled={campaignsPage === 1} style={{
-                  padding: '6px 12px',
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '8px',
-                  background: 'transparent',
-                  cursor: campaignsPage === 1 ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  opacity: campaignsPage === 1 ? 0.5 : 1
-                }}>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/01c076b6-3528-475d-af10-7b71b96e0863.svg" style={{
-                    width: '16px'
-                  }} />
-                  <span style={{
-              color: colors.textPrimary,
-              fontSize: '14px',
-              fontWeight: 500
-                  }}>Previous</span>
-                </button>
-                {getCampaignsPageNumbers().map(page => <button key={page} onClick={() => handleCampaignsPageClick(page)} style={{
-                  width: '28px',
-                  height: '28px',
-                  border: page === campaignsPage ? (isDarkMode ? '1px solid rgba(115, 115, 115, 1)' : `1px solid ${colors.accent}`) : 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  backgroundColor: page === campaignsPage ? (isDarkMode ? 'rgba(82, 82, 91, 1)' : 'rgba(237, 243, 255, 1)') : 'transparent',
-                  color: page === campaignsPage ? (isDarkMode ? '#FFFFFF' : colors.accent) : colors.textPrimary
-                }}>
-                  {page === -1 ? '...' : page}
-                </button>)}
-                <button onClick={handleCampaignsNext} disabled={campaignsPage === campaignsTotalPages} style={{
-                  padding: '6px 12px',
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '8px',
-                  background: 'transparent',
-                  cursor: campaignsPage === campaignsTotalPages ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  opacity: campaignsPage === campaignsTotalPages ? 0.5 : 1
-                }}>
-                  <span style={{
-                    color: colors.textPrimary,
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search Reviews"
+                  style={{
+                    flex: 1,
+                    border: 'none',
+                    outline: 'none',
                     fontSize: '14px',
-                    fontWeight: 500
-                  }}>Next</span>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/607c4c87-4637-410f-bdea-5d4899aac524.svg" style={{
-                    width: '16px'
-                  }} />
+                    color: colors.textPrimary,
+                    backgroundColor: 'transparent',
+                    fontFamily: '"Geist", sans-serif'
+                  }}
+                />
+                <div style={{
+                  padding: '2px 6px',
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  color: colors.textSecondary,
+                  fontFamily: '"Inter", sans-serif',
+                  letterSpacing: '0.48px',
+                  textTransform: 'uppercase'
+                }}>⌘K</div>
+              </div>
+
+              {/* Filter Dropdowns */}
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+              <div style={{ position: 'relative' }}>
+                <select style={{
+                  padding: '6px 32px 6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px',
+                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white', color: colors.textPrimary,
+                  fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif', cursor: 'pointer',
+                  appearance: 'none', outline: 'none', minWidth: '100px'
+                }}>
+                  <option value="">City</option>
+                  <option value="London">London</option>
+                </select>
+                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
+              </div>
+              <div style={{ position: 'relative' }}>
+                <select style={{
+                  padding: '6px 32px 6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px',
+                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white', color: colors.textPrimary,
+                  fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif', cursor: 'pointer',
+                  appearance: 'none', outline: 'none', minWidth: '100px'
+                }}>
+                  <option value="">Date</option>
+                </select>
+                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
+              </div>
+              <div style={{ position: 'relative' }}>
+                <select style={{
+                  padding: '6px 32px 6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px',
+                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white', color: colors.textPrimary,
+                  fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif', cursor: 'pointer',
+                  appearance: 'none', outline: 'none', minWidth: '100px'
+                }}>
+                  <option value="">Ratings</option>
+                  <option value="5">5 Stars</option>
+                  <option value="4">4 Stars</option>
+                  <option value="3">3 Stars</option>
+                  <option value="2">2 Stars</option>
+                  <option value="1">1 Star</option>
+                </select>
+                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
+              </div>
+              <div style={{ position: 'relative' }}>
+                <select style={{
+                  padding: '6px 32px 6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px',
+                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white', color: colors.textPrimary,
+                  fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif', cursor: 'pointer',
+                  appearance: 'none', outline: 'none', minWidth: '100px'
+                }}>
+                  <option value="">Source</option>
+                  <option value="Google">Google</option>
+                  <option value="Facebook">Facebook</option>
+                  <option value="Ambassador">Ambassador</option>
+                </select>
+                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
+              </div>
+              </div>
+            </div>
+
+            {/* Reviews Table */}
+            <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                <thead>
+                  <tr style={{
+                    backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)',
+                    borderBottom: `1px solid ${colors.border}`
+                  }}>
+                    <th style={{ textAlign: 'left', padding: '12px 24px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '18%' }}>LISTING</th>
+                    <th style={{ textAlign: 'left', padding: '12px 8px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '32%' }}>REVIEWS</th>
+                    <th style={{ textAlign: 'center', padding: '12px 8px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '14%' }}>RATING</th>
+                    <th style={{ textAlign: 'left', padding: '12px 8px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '14%' }}>STUDENT NAME</th>
+                    <th style={{ textAlign: 'center', padding: '12px 8px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '10%' }}>SOURCE</th>
+                    <th style={{ textAlign: 'right', padding: '12px 24px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '12%' }}>DATE</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentReviewsData.map((review: any, i: number) => (
+                    <motion.tr
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: i * 0.03, ease: [0.4, 0, 0.2, 1] }}
+                      style={{ borderBottom: `1px solid ${colors.border}` }}
+                    >
+                      <td style={{ padding: '16px 24px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', verticalAlign: 'top' }}>{review.listing}</td>
+                      <td style={{ padding: '16px 8px', fontSize: '13px', fontWeight: 400, color: colors.textSecondary, fontFamily: '"Geist", sans-serif', lineHeight: '1.5', verticalAlign: 'top', fontStyle: 'italic' }}>{review.review}</td>
+                      <td style={{ padding: '16px 8px', textAlign: 'center', verticalAlign: 'top' }}>
+                        <div style={{ display: 'inline-flex', gap: '2px' }}>{renderStars(review.rating)}</div>
+                      </td>
+                      <td style={{ padding: '16px 8px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', verticalAlign: 'top' }}>{review.studentName}</td>
+                      <td style={{ padding: '16px 8px', fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif', textAlign: 'center', verticalAlign: 'top' }}>{review.source}</td>
+                      <td style={{ padding: '16px 24px', fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist Mono"', textAlign: 'right', verticalAlign: 'top' }}>{review.date}</td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Reviews Pagination Footer */}
+            <footer style={{
+              height: '68px', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              borderTop: `1px solid ${colors.border}`, marginTop: 'auto', backgroundColor: colors.bg
+            }}>
+              <span style={{ fontSize: '14px', color: colors.textSecondary }}>Showing {reviewsStartItem} to {reviewsEndItem} of {reviewsTotalItems} entries</span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button onClick={handleReviewsPrevious} disabled={reviewsPage === 1} style={{
+                  padding: '6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px', background: 'transparent',
+                  cursor: reviewsPage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px', opacity: reviewsPage === 1 ? 0.5 : 1
+                }}>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/01c076b6-3528-475d-af10-7b71b96e0863.svg" style={{ width: '16px' }} />
+                  <span style={{ color: colors.textPrimary, fontSize: '14px', fontWeight: 500 }}>Previous</span>
+                </button>
+                {getReviewsPageNumbers().map(page => (
+                  <button key={page} onClick={() => handleReviewsPageClick(page)} style={{
+                    width: '28px', height: '28px',
+                    border: page === reviewsPage ? (isDarkMode ? '1px solid rgba(115, 115, 115, 1)' : `1px solid ${colors.accent}`) : 'none',
+                    borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 500,
+                    backgroundColor: page === reviewsPage ? (isDarkMode ? 'rgba(82, 82, 91, 1)' : 'rgba(237, 243, 255, 1)') : 'transparent',
+                    color: page === reviewsPage ? (isDarkMode ? '#FFFFFF' : colors.accent) : colors.textPrimary
+                  }}>{page === -1 ? '...' : page}</button>
+                ))}
+                <button onClick={handleReviewsNext} disabled={reviewsPage === reviewsTotalPages} style={{
+                  padding: '6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px', background: 'transparent',
+                  cursor: reviewsPage === reviewsTotalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px', opacity: reviewsPage === reviewsTotalPages ? 0.5 : 1
+                }}>
+                  <span style={{ color: colors.textPrimary, fontSize: '14px', fontWeight: 500 }}>Next</span>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/607c4c87-4637-410f-bdea-5d4899aac524.svg" style={{ width: '16px' }} />
                 </button>
               </div>
             </footer>
@@ -4898,7 +5135,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               </div>
             </div>
           </>
-        ) : activeNavigation === 'Dashboard' ? (
+        ) : activeNavigation === 'Insights' ? (
           <>
             {/* Dashboard Header */}
             <header style={{
@@ -4932,12 +5169,12 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                     color: colors.textPrimary,
                     fontFamily: '"Geist Mono"',
                     textTransform: 'uppercase'
-                  }}>Dashboard</span>
+                  }}>Insights</span>
                 </div>
               </div>
             </header>
 
-            <PageSection pageKey="Dashboard">
+            <PageSection pageKey="Insights">
               {/* Empty State */}
               <div style={{
                 flex: 1,
@@ -4999,659 +5236,315 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               </div>
             </PageSection>
           </>
-        ) : (
+        ) : activeNavigation === 'Bookings' ? (
           <>
-        <header style={{
-        height: '56px',
-        padding: '0 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottom: `1px solid ${colors.border}`,
-        backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)'
-      }}>
-          <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px'
-        }}>
-            <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg" style={{
-            width: '20px'
-          }} alt="back" />
-            <div style={{
-            height: '16px',
-            borderLeft: `1px solid ${colors.border}`
-          }} />
-            <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-              <span style={{
-              fontSize: '14px',
-              color: colors.textSecondary,
-              fontFamily: '"Geist Mono"',
-              textTransform: 'uppercase'
-            }}>Dashboard</span>
-              <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/42fc4aca-b2d6-4358-bd46-3ec69e3c9773.svg" style={{
-              width: '14px'
-            }} />
-              <span style={{
-              fontSize: '14px',
-              color: colors.textPrimary,
-              fontFamily: '"Geist Mono"',
-              textTransform: 'uppercase'
-            }}>Leads</span>
-            </div>
-          </div>
-          <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px'
-        }}>
-            <button style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '6px 12px',
-            border: `1px solid ${colors.border}`,
-            borderRadius: '8px',
-            background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-            cursor: 'pointer'
-          }}>
-              <img src={isDarkMode ? "https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/a7aea9d4-4862-4777-a667-d1f47c0a09a6.svg" : "https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/515ca86f-0c62-489e-ac2f-446ec51a901e.svg"} style={{
-              width: '20px'
-            }} />
-              <span style={{
-              color: isDarkMode ? 'white' : 'rgba(10, 10, 10, 1)',
-              fontSize: '14px',
-              fontWeight: 500
-            }}>Export</span>
-            </button>
-            <button style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '6px 12px',
-            border: 'none',
-            borderRadius: '10px',
-            background: 'rgba(12, 99, 248, 1)',
-            color: 'white',
-            cursor: 'pointer',
-            boxShadow: '0px 1px 2px rgba(14, 18, 27, 0.24)'
-          }}>
-              <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bcf98e1d-f1ab-46ff-85dc-5337065d7d9e.svg" style={{
-              width: '20px'
-            }} />
-              <span style={{
-              fontSize: '14px',
-              fontWeight: 500
-            }}>Add Lead</span>
-            </button>
-          </div>
-        </header>
-
-        <div style={{
-        padding: '16px 24px',
-        backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-          <div style={{
-          display: 'flex',
-          gap: '4px',
-          backgroundColor: isDarkMode ? 'rgba(38, 38, 38, 1)' : 'rgba(245, 245, 245, 1)',
-          padding: '4px',
-          borderRadius: '10px',
-          position: 'relative'
-        }}>
-            {['Leads', 'Prequalified Leads'].map(tab => <motion.button
-              key={tab}
-              onClick={() => {
-                playClickSound();
-                setActiveTab(tab);
-              }}
-              style={{
-            padding: '4px 12px',
-            borderRadius: '10px',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 500,
-            backgroundColor: activeTab === tab ? isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white' : 'transparent',
-            color: activeTab === tab ? colors.textPrimary : colors.textSecondary,
-                boxShadow: activeTab === tab ? '0px 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
-                position: 'relative',
-                zIndex: activeTab === tab ? 1 : 0
-              }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{
-                duration: 0.2,
-                ease: [0.4, 0, 0.2, 1]
-              }}
-            >
-                {tab}
-              </motion.button>)}
-          </div>
-
-          <div style={{
-          display: 'flex',
-          gap: '16px',
-          alignItems: 'center'
-        }}>
-            <div style={{
-            position: 'relative',
-            width: '320px'
-          }}>
-              <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/372af438-08ee-41de-93d0-dc709e656e7e.svg" style={{
-              position: 'absolute',
-              left: '8px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: '20px'
-            }} />
-              <input type="text" placeholder="Search Leads" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }} style={{
-              width: '100%',
-              padding: '6px 40px 6px 32px',
-              borderRadius: '8px',
-              border: `1px solid ${colors.border}`,
-              background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-              color: colors.textPrimary,
-              outline: 'none',
-              fontSize: '14px'
-            }} />
-              <div style={{
-              position: 'absolute',
-              right: '8px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              padding: '2px 6px',
-              border: `1px solid ${colors.border}`,
-              borderRadius: '4px',
-              fontSize: '12px',
-              color: colors.textSecondary
-            }}>⌘K</div>
-            </div>
-
-            <button style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '6px 12px',
-            border: `1px solid ${colors.border}`,
-            borderRadius: '8px',
-            background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-            cursor: 'pointer'
-          }}>
-              <span style={{
-              color: colors.textPrimary,
-              fontSize: '14px',
-              fontWeight: 500
-            }}>Last 7 days</span>
-              <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{
-              width: '20px'
-            }} />
-            </button>
-
-            <button onClick={() => setShowFilters(true)} style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '6px 12px',
-            border: `1px solid ${colors.border}`,
-            borderRadius: '8px',
-            background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-            cursor: 'pointer'
-          }}>
-              <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/2f5b48f5-f24e-4c38-8924-edfe149b9b1d.svg" style={{
-              width: '20px'
-            }} />
-              <span style={{
-              color: colors.textPrimary,
-              fontSize: '14px',
-              fontWeight: 500,
-              fontFamily: '"Geist Mono"'
-            }}>FILTERS</span>
-            </button>
-          </div>
-        </div>
-
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{
-              duration: 0.3,
-              ease: [0.4, 0, 0.2, 1]
-            }}
-            style={{
-        flex: 1,
-        overflow: 'auto',
-        borderTop: `1px solid ${colors.border}`
-            }}
-          >
-          <table style={{
-          width: '100%',
-          borderCollapse: 'collapse'
-        }}>
-            <thead>
-              <tr style={{
-              backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)',
-              borderBottom: `1px solid ${colors.border}`
-            }}>
-                <th style={{
-                textAlign: 'left',
-                padding: '12px 24px',
-                fontSize: '13px',
-                color: colors.textSecondary,
-                fontFamily: '"Geist Mono"',
-                fontWeight: 500
-              }}>LEAD</th>
-                <th style={{
-                textAlign: 'left',
-                padding: '12px 8px',
-                fontSize: '13px',
-                color: colors.textSecondary,
-                fontFamily: '"Geist Mono"',
-                fontWeight: 500
-              }}>STATUS</th>
-                <th style={{
-                textAlign: 'left',
-                padding: '12px 16px',
-                fontSize: '13px',
-                color: colors.textSecondary,
-                fontFamily: '"Geist Mono"',
-                fontWeight: 500
-              }}>DESTINATION CITY</th>
-                <th style={{
-                textAlign: 'left',
-                padding: '12px 8px',
-                fontSize: '13px',
-                color: colors.textSecondary,
-                fontFamily: '"Geist Mono"',
-                fontWeight: 500
-              }}>INTAKE</th>
-                <th style={{
-                textAlign: 'left',
-                padding: '12px 8px',
-                fontSize: '13px',
-                color: colors.textSecondary,
-                fontFamily: '"Geist Mono"',
-                fontWeight: 500
-              }}>SUB-PARTNER</th>
-                <th style={{
-                textAlign: 'right',
-                padding: '12px 24px',
-                fontSize: '13px',
-                color: colors.textSecondary,
-                fontFamily: '"Geist Mono"',
-                fontWeight: 500
-              }}>CREATED ON</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentLeadsData.map((lead, i) => <motion.tr
-                key={i}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{
-                  duration: 0.3,
-                  delay: i * 0.03,
-                  ease: [0.4, 0, 0.2, 1]
-                }}
-                style={{
-              borderBottom: `1px solid ${colors.border}`
-                }}
-              >
-                  <td style={{
-                padding: '8px 24px'
-              }}>
-                    <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
-                      <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    backgroundColor: getAvatarColors(i).bg,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                        <span style={{
-                      color: getAvatarColors(i).text,
-                      fontSize: '14px',
-                      fontWeight: 500
-                    }}>{lead.initial}</span>
-                      </div>
-                      <div style={{
-                    display: 'flex',
-                    flexDirection: 'column'
-                  }}>
-                        <span style={{
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      color: colors.textPrimary
-                    }}>{lead.name}</span>
-                        <span style={{
-                      fontSize: '14px',
-                      color: colors.textSecondary
-                    }}>{lead.email}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td style={{
-                padding: '8px 8px'
-              }}>{getStatusBadge(lead.status)}</td>
-                  <td style={{
-                padding: '8px 16px'
-              }}>
-                    <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                      <img src={lead.countryIcon} style={{
-                    width: '20px'
-                  }} />
-                      <span style={{
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: colors.textPrimary
-                  }}>{lead.city}</span>
-                    </div>
-                  </td>
-                  <td style={{
-                padding: '8px 8px'
-              }}>
-                    <div style={{
-                  fontSize: '14px',
-                  color: colors.textPrimary,
-                  border: `1px solid transparent`,
-                  padding: '4px 0'
-                }}>{lead.intake}</div>
-                  </td>
-                  <td style={{
-                padding: '8px 8px'
-              }}>
-                    <div style={{
-                  fontSize: '14px',
-                  color: colors.textPrimary
-                }}>{lead.partner}</div>
-                  </td>
-                  <td style={{
-                padding: '8px 24px',
-                textAlign: 'right',
-                fontSize: '14px',
-                color: colors.textSecondary,
-                fontFamily: '"Geist Mono"'
-              }}>{lead.created}</td>
-                </motion.tr>)}
-            </tbody>
-          </table>
-          </motion.div>
-        </AnimatePresence>
-
-        <footer style={{
-        height: '68px',
-        padding: '0 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderTop: `1px solid ${colors.border}`
-      }}>
-          <span style={{
-          fontSize: '14px',
-          color: colors.textSecondary
-        }}>Showing {startItem} to {endItem} of {totalItems} entries</span>
-          <div style={{
-          display: 'flex',
-          gap: '4px'
-        }}>
-            <button onClick={handlePrevious} disabled={currentPage === 1} style={{
-            padding: '6px 12px',
-            border: `1px solid ${colors.border}`,
-            borderRadius: '8px',
-            background: 'transparent',
-            cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            opacity: currentPage === 1 ? 0.5 : 1
-          }}>
-              <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/01c076b6-3528-475d-af10-7b71b96e0863.svg" style={{
-              width: '16px'
-            }} />
-              <span style={{
-              color: colors.textPrimary,
-              fontSize: '14px',
-              fontWeight: 500
-            }}>Previous</span>
-            </button>
-            {getPageNumbers().map(page => <button key={page} onClick={() => handlePageClick(page)} style={{
-            width: '28px',
-            height: '28px',
-            border: page === currentPage ? (isDarkMode ? '1px solid rgba(115, 115, 115, 1)' : `1px solid ${colors.accent}`) : 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 500,
-            backgroundColor: page === currentPage ? (isDarkMode ? 'rgba(82, 82, 91, 1)' : 'rgba(237, 243, 255, 1)') : 'transparent',
-            color: page === currentPage ? (isDarkMode ? '#FFFFFF' : colors.accent) : colors.textPrimary
-          }}>
-                {page}
-              </button>)}
-            <button onClick={handleNext} disabled={currentPage === totalPages} style={{
-            padding: '6px 12px',
-            border: `1px solid ${colors.border}`,
-            borderRadius: '8px',
-            background: 'transparent',
-            cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            opacity: currentPage === totalPages ? 0.5 : 1
-          }}>
-              <span style={{
-              color: colors.textPrimary,
-              fontSize: '14px',
-              fontWeight: 500
-            }}>Next</span>
-              <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/607c4c87-4637-410f-bdea-5d4899aac524.svg" style={{
-              width: '16px'
-            }} />
-            </button>
-          </div>
-        </footer>
-
-        {/* Filter Overlay */}
-        {showFilters && <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 100
-      }}>
-            <div style={{
-          width: '577px',
-          backgroundColor: colors.bg,
-          borderRadius: '16px',
-          border: `1px solid ${colors.border}`,
-          boxShadow: '0px 10px 15px -3px rgba(0, 0, 0, 0.1)',
-          overflow: 'hidden'
-        }}>
-              <div style={{
-            padding: '16px 24px',
-            backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)',
-            borderBottom: `1px solid ${colors.border}`,
-            fontSize: '20px',
-            fontWeight: 600,
-            color: colors.textPrimary
-          }}>
-                Filters
-              </div>
-              <div style={{
-            padding: '24px'
-          }}>
-                <div style={{
+            {/* Bookings Header */}
+            <header style={{
+              height: '56px',
+              padding: '0 24px',
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
-              marginBottom: '24px'
+              justifyContent: 'space-between',
+              borderBottom: `1px solid ${colors.border}`,
+              backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)',
+              flexShrink: 0
             }}>
-                  <span style={{
-                fontSize: '12px',
-                fontWeight: 600,
-                color: colors.textSecondary,
-                fontFamily: '"Geist Mono"'
-              }}>STATUS</span>
-                  <div style={{
-                flex: 1,
-                height: '1px',
-                backgroundColor: colors.border
-              }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg" style={{ width: '20px' }} alt="back" />
+                <div style={{ height: '20px', borderLeft: `1px solid ${colors.border}` }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist Mono"', textTransform: 'uppercase' }}>Dashboard</span>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/42fc4aca-b2d6-4358-bd46-3ec69e3c9773.svg" style={{ width: '14px' }} />
+                  <span style={{ fontSize: '14px', color: colors.textPrimary, fontFamily: '"Geist Mono"', textTransform: 'uppercase' }}>Bookings</span>
                 </div>
-                
-                <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr 1fr',
-              gap: '24px'
-            }}>
-                  {[{
-                label: 'ENGAGED',
-                color: 'rgba(22, 163, 74, 0.1)',
-                text: 'rgba(22, 163, 74, 1)'
-              }, {
-                label: 'CANCELLED',
-                color: 'rgba(224, 52, 52, 0.1)',
-                text: 'rgba(220, 38, 38, 1)'
-              }, {
-                label: 'REPEAT USERS',
-                color: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(244, 244, 245, 0.6)',
-                text: colors.textPrimary
-              }, {
-                label: 'NOT BOOKED',
-                color: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(244, 244, 245, 0.6)',
-                text: colors.textPrimary
-              }, {
-                label: 'FOLLOW-UP LATER',
-                color: 'rgba(227, 146, 25, 0.1)',
-                text: 'rgba(217, 119, 6, 1)'
-              }, {
-                label: 'CONTACTED',
-                color: 'rgba(22, 163, 74, 0.1)',
-                text: 'rgba(22, 163, 74, 1)'
-              }, {
-                label: 'NON-RESPONSIVE',
-                color: 'rgba(2, 132, 199, 0.1)',
-                text: 'rgba(2, 132, 199, 1)'
-              }].map((status, idx) => <div key={idx} style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px'
-              }}>
-                      <input type="checkbox" style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '4px',
-                  border: `1px solid ${colors.border}`
-                }} />
-                      <div style={{
-                  padding: '2px 6px',
-                  borderRadius: '6px',
-                  backgroundColor: status.color,
-                  fontSize: '12px',
-                  color: status.text,
-                  fontWeight: 500,
-                  fontFamily: '"Geist Mono"'
-                }}>{status.label}</div>
-                    </div>)}
-                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <button style={{
+                  display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px',
+                  border: `1px solid ${colors.border}`, borderRadius: '8px',
+                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white', cursor: 'pointer'
+                }}>
+                  <img src={isDarkMode ? "https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/a7aea9d4-4862-4777-a667-d1f47c0a09a6.svg" : "https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/515ca86f-0c62-489e-ac2f-446ec51a901e.svg"} style={{ width: '20px' }} />
+                  <span style={{ color: isDarkMode ? 'white' : 'rgba(10, 10, 10, 1)', fontSize: '14px', fontWeight: 500 }}>Export</span>
+                </button>
+              </div>
+            </header>
 
-                <div style={{
-              marginTop: '24px'
+            {/* Bookings Stats Banner */}
+            <div style={{
+              padding: '16px 24px',
+              display: 'flex',
+              alignItems: 'stretch',
+              backgroundColor: colors.bg,
+              borderBottom: `1px solid ${colors.border}`,
             }}>
-                  <div style={{
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Total Bookings</span>
+                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>4,849</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>+12.5%</span>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 14L14 6M14 6H9M14 6V11" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#9333ea', width: '100%' }} />
+              </div>
+              <div style={{ width: '1px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}`, margin: '0 24px' }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Processing</span>
+                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>574</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>-3.2%</span>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14 6L6 14M6 14H11M6 14V9" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#22d3ee', width: '100%' }} />
+              </div>
+              <div style={{ width: '1px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}`, margin: '0 24px' }} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Invoiced</span>
+                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>243</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>+0.8%</span>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 14L14 6M14 6H9M14 6V11" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </div>
+                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#9333ea', width: '100%' }} />
+              </div>
+              <div style={{ width: '1px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}`, margin: '0 24px' }} />
+              <div style={{ flex: 1 }} />
+            </div>
+
+
+            {/* Bookings Filter / Search Bar */}
+            <div style={{
+              height: '68px',
+              padding: '0 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: `1px solid ${colors.border}`,
+              backgroundColor: colors.bg
+            }}>
+              <div style={{
+                width: '320px',
+                height: '36px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                marginBottom: '16px'
-              }}>
-                    <span style={{
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: colors.textSecondary,
-                  fontFamily: '"Geist Mono"'
-                }}>DESTINATION COUNTRY</span>
-                    <div style={{
-                  flex: 1,
-                  height: '1px',
-                  backgroundColor: colors.border
-                }} />
-                  </div>
-                  <div style={{
-                padding: '8px 12px',
+                gap: '6px',
+                padding: '0 8px',
                 border: `1px solid ${colors.border}`,
                 borderRadius: '8px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                color: colors.textSecondary,
-                fontSize: '14px'
+                backgroundColor: colors.bg,
+                boxShadow: '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
               }}>
-                    Select Destination Country
-                    <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/3480791f-e6f4-49eb-932d-ba59b86eb57f.svg" style={{
-                  width: '16px'
-                }} />
-                  </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Booking ID"
+                  style={{
+                    flex: 1,
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: '14px',
+                    color: colors.textPrimary,
+                    backgroundColor: 'transparent',
+                    fontFamily: '"Geist", sans-serif'
+                  }}
+                />
+                <div style={{
+                  padding: '2px 6px',
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  color: colors.textSecondary,
+                  fontFamily: '"Inter", sans-serif',
+                  letterSpacing: '0.48px',
+                  textTransform: 'uppercase'
+                }}>⌘K</div>
+              </div>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                <div style={{ position: 'relative' }}>
+                  <select style={{
+                    padding: '6px 32px 6px 12px',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '8px',
+                    background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                    color: colors.textPrimary,
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    fontFamily: '"Geist", sans-serif',
+                    cursor: 'pointer',
+                    appearance: 'none',
+                    outline: 'none',
+                    minWidth: '130px'
+                  }}>
+                    <option value="">Status</option>
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <select style={{
+                    padding: '6px 32px 6px 12px',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '8px',
+                    background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                    color: colors.textPrimary,
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    fontFamily: '"Geist", sans-serif',
+                    cursor: 'pointer',
+                    appearance: 'none',
+                    outline: 'none',
+                    minWidth: '140px'
+                  }}>
+                    <option value="">Move In Date</option>
+                  </select>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <select style={{
+                    padding: '6px 32px 6px 12px',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '8px',
+                    background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                    color: colors.textPrimary,
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    fontFamily: '"Geist", sans-serif',
+                    cursor: 'pointer',
+                    appearance: 'none',
+                    outline: 'none',
+                    minWidth: '130px'
+                  }}>
+                    <option value="">Tenure</option>
+                  </select>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
                 </div>
               </div>
-              <div style={{
-            padding: '16px 24px',
-            borderTop: `1px solid ${colors.border}`,
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '16px'
-          }}>
-                <button onClick={() => setShowFilters(false)} style={{
-              padding: '8px 16px',
-              border: `1px solid ${colors.border}`,
-              borderRadius: '10px',
-              background: 'transparent',
-              color: colors.textPrimary,
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 500
-            }}>Cancel</button>
-                <button onClick={() => setShowFilters(false)} style={{
-              padding: '8px 20px',
-              border: 'none',
-              borderRadius: '10px',
-              background: 'rgba(12, 99, 248, 1)',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 500,
-              boxShadow: '0px 1px 2px rgba(14, 18, 27, 0.24)'
-            }}>Apply filters</button>
-              </div>
             </div>
-          </div>}
+
+            {/* Bookings Table */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`bookings-${bookingsPage}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                style={{ flex: 1, overflowX: 'auto', minHeight: 0 }}
+              >
+                <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                  <thead>
+                    <tr style={{
+                      backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)',
+                      borderBottom: `1px solid ${colors.border}`,
+                      height: '42px'
+                    }}>
+                      <th style={{ padding: '0 16px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Amber ID</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Booking ID</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Listing</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Student Name</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Status</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Move In Date</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Tenure</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentBookingsData.map((item: any, idx: number) => (
+                      <motion.tr
+                        key={`booking-${bookingsStartIndex + idx}`}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: idx * 0.03, ease: [0.4, 0, 0.2, 1] }}
+                        style={{ borderBottom: `1px solid ${colors.border}`, height: '56px', backgroundColor: colors.bg }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDarkMode ? 'rgba(23, 23, 23, 0.6)' : 'rgba(250, 250, 250, 0.7)'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = colors.bg; }}
+                      >
+                        <td style={{ padding: '0 16px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist Mono"' }}>{item.amberId}</td>
+                        <td style={{ padding: '0 8px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist Mono"' }}>{item.bookingId}</td>
+                        <td style={{ padding: '0 8px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif' }}>{item.listing}</td>
+                        <td style={{ padding: '0 8px', fontSize: '14px', color: colors.textPrimary, fontFamily: '"Geist", sans-serif' }}>{item.studentName}</td>
+                        <td style={{ padding: '0 8px' }}>{getStatusBadge(item.status)}</td>
+                        <td style={{ padding: '0 8px', fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist Mono"' }}>{item.moveInDate}</td>
+                        <td style={{ padding: '0 8px', fontSize: '14px', color: colors.textPrimary, fontFamily: '"Geist", sans-serif' }}>{item.tenure}</td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Bookings Pagination Footer */}
+            <footer style={{
+              height: '68px',
+              padding: '0 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderTop: `1px solid ${colors.border}`,
+              marginTop: 'auto',
+              backgroundColor: colors.bg
+            }}>
+              <span style={{ fontSize: '14px', color: colors.textSecondary }}>
+                Showing {bookingsStartItem} to {bookingsEndItem} of {bookingsTotalItems} entries
+              </span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button onClick={handleBookingsPrevious} disabled={bookingsPage === 1} style={{
+                  padding: '6px 12px',
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '8px',
+                  background: 'transparent',
+                  cursor: bookingsPage === 1 ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  opacity: bookingsPage === 1 ? 0.5 : 1
+                }}>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/01c076b6-3528-475d-af10-7b71b96e0863.svg" style={{ width: '16px' }} />
+                  <span style={{ color: colors.textPrimary, fontSize: '14px', fontWeight: 500 }}>Previous</span>
+                </button>
+                {getBookingsPageNumbers().map((page, i) => (
+                  <button key={`bp-${page}-${i}`} onClick={() => handleBookingsPageClick(page)} style={{
+                    width: '28px',
+                    height: '28px',
+                    border: page === bookingsPage ? (isDarkMode ? '1px solid rgba(115, 115, 115, 1)' : `1px solid ${colors.accent}`) : 'none',
+                    borderRadius: '8px',
+                    cursor: page === -1 ? 'default' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    backgroundColor: page === bookingsPage ? (isDarkMode ? 'rgba(82, 82, 91, 1)' : 'rgba(237, 243, 255, 1)') : 'transparent',
+                    color: page === bookingsPage ? (isDarkMode ? '#FFFFFF' : colors.accent) : colors.textPrimary
+                  }}>
+                    {page === -1 ? '...' : page}
+                  </button>
+                ))}
+                <button onClick={handleBookingsNext} disabled={bookingsPage === bookingsTotalPages} style={{
+                  padding: '6px 12px',
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '8px',
+                  background: 'transparent',
+                  cursor: bookingsPage === bookingsTotalPages ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  opacity: bookingsPage === bookingsTotalPages ? 0.5 : 1
+                }}>
+                  <span style={{ color: colors.textPrimary, fontSize: '14px', fontWeight: 500 }}>Next</span>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/607c4c87-4637-410f-bdea-5d4899aac524.svg" style={{ width: '16px' }} />
+                </button>
+              </div>
+            </footer>
           </>
-        )}
+        ) : null}
       </main>
 
       {/* Listing Detail Side Drawer */}
