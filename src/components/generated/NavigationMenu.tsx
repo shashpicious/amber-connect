@@ -38,6 +38,11 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   const [processingAnimationData, setProcessingAnimationData] = useState<any>(null);
   const [isScrambling, setIsScrambling] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [editingAccountDetails, setEditingAccountDetails] = useState(false);
+  const [editingAddressInfo, setEditingAddressInfo] = useState(false);
+  const [teamsSearchQuery, setTeamsSearchQuery] = useState('');
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [teamModalMember, setTeamModalMember] = useState<{ name: string; email: string; role: string } | null>(null);
   const [themePreference, setThemePreference] = useState<'light' | 'dark' | 'system'>(initialMode === 'dark' ? 'dark' : 'light');
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -240,8 +245,10 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   const avatarColors = [
     { bg: 'rgba(192, 219, 255, 1)', text: 'rgba(18, 55, 104, 1)' },
     { bg: 'rgba(218, 192, 255, 1)', text: 'rgba(62, 26, 117, 1)' },
+    { bg: 'rgba(255, 213, 179, 1)', text: 'rgba(154, 72, 10, 1)' },
+    { bg: 'rgba(187, 247, 208, 1)', text: 'rgba(22, 101, 52, 1)' },
   ];
-  const getAvatarColors = (index: number) => avatarColors[index % 2];
+  const getAvatarColors = (index: number) => avatarColors[index % avatarColors.length];
 
   // Helper function to get icon filter based on selection and theme
   const getIconFilter = (isSelected: boolean) => {
@@ -260,22 +267,22 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   };
   const navItems = [{
     name: 'Insights',
-    icon: 'https://www.figma.com/api/mcp/asset/18766df0-273c-436c-acd1-1f66aa409cbe'
+    icon: '/assets/icon-insights.svg'
   }, {
     name: 'Listings',
-    icon: 'https://www.figma.com/api/mcp/asset/556926e2-b879-473d-ad86-ed93b4695a8c'
+    icon: '/assets/icon-listings.svg'
   }, {
     name: 'Bookings',
-    icon: 'https://www.figma.com/api/mcp/asset/c887a40d-a7fc-447f-8f9f-8e037f89ebaf'
+    icon: '/assets/icon-bookings.svg'
   }, {
     name: 'Invoices',
-    icon: 'https://www.figma.com/api/mcp/asset/126c7fb9-38d7-4706-9592-60f56c6c8052'
+    icon: '/assets/icon-invoices.svg'
   }, {
     name: 'Reviews',
-    icon: 'https://www.figma.com/api/mcp/asset/7ef4ae29-90af-4a5f-b1f2-5f3a0e765abf'
+    icon: '/assets/icon-reviews.svg'
   }, {
     name: 'Campaigns',
-    icon: 'https://www.figma.com/api/mcp/asset/b197b3f3-1fec-4dbd-86a2-9791705fb40d'
+    icon: '/assets/icon-campaigns.svg'
   }] as any[];
   const systemItems = [] as any[];
   const leadsData = [{
@@ -2579,14 +2586,14 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
 
             {/* Top Menu Items */}
             <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => { setShowProfileMenu(false); setActiveNavigation('AccountDetails'); }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <circle cx="8" cy="5.5" r="2.5" stroke={colors.textPrimary} strokeWidth="1.3" />
                   <path d="M2.5 13.5C2.5 11.015 5.015 9 8 9s5.5 2.015 5.5 4.5" stroke={colors.textPrimary} strokeWidth="1.3" strokeLinecap="round" />
                 </svg>
                 <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Account Details</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => { setShowProfileMenu(false); setActiveNavigation('Teams'); }}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <circle cx="5.5" cy="5" r="2" stroke={colors.textPrimary} strokeWidth="1.3" />
                   <circle cx="10.5" cy="5" r="2" stroke={colors.textPrimary} strokeWidth="1.3" />
@@ -5544,8 +5551,953 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               </div>
             </footer>
           </>
+        ) : activeNavigation === 'AccountDetails' ? (
+          <>
+            {/* Account Details Header */}
+            <header style={{
+              height: '56px',
+              padding: '0 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: `1px solid ${colors.border}`,
+              backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px'
+              }}>
+                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg" style={{
+                  width: '20px',
+                  cursor: 'pointer'
+                }} alt="back" onClick={() => setActiveNavigation('Listings')} />
+                <div style={{
+                  height: '16px',
+                  borderLeft: `1px solid ${colors.border}`
+                }} />
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <span style={{
+                    fontSize: '14px',
+                    color: colors.textSecondary,
+                    fontFamily: '"Geist Mono"',
+                    textTransform: 'uppercase'
+                  }}>Dashboard</span>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/42fc4aca-b2d6-4358-bd46-3ec69e3c9773.svg" style={{
+                    width: '14px'
+                  }} />
+                  <span style={{
+                    fontSize: '14px',
+                    color: colors.textPrimary,
+                    fontFamily: '"Geist Mono"',
+                    textTransform: 'uppercase'
+                  }}>Account Details</span>
+                </div>
+              </div>
+            </header>
+
+            {/* Account Details Content */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '24px',
+              backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '40px'
+            }}>
+              {/* Account Details Card */}
+              <div style={{
+                border: `1px solid ${colors.border}`,
+                borderRadius: '16px',
+                overflow: 'hidden'
+              }}>
+                {/* Card Header */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '16px',
+                  backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)'
+                }}>
+                  <span style={{
+                    fontSize: '16px',
+                    fontWeight: 500,
+                    color: colors.textPrimary,
+                    lineHeight: '24px'
+                  }}>Account Details</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {editingAccountDetails ? (
+                      <>
+                        <button onClick={() => setEditingAccountDetails(false)} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 12px',
+                          border: `1px solid ${colors.border}`,
+                          borderRadius: '8px',
+                          background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                          cursor: 'pointer',
+                          boxShadow: '0px 1px 2px rgba(0,0,0,0.05)'
+                        }}>
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M3 3h4v4H3V3zm0 6h4v4H3V9zm6-6h4v4H9V3zm0 6h4v4H9V9z" stroke={colors.textPrimary} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <rect x="3" y="2" width="10" height="12" rx="1" stroke={colors.textPrimary} strokeWidth="1.2"/>
+                            <path d="M6 5h4M6 8h4" stroke={colors.textPrimary} strokeWidth="1.2" strokeLinecap="round"/>
+                          </svg>
+                          <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary }}>Save</span>
+                        </button>
+                        <button onClick={() => setEditingAccountDetails(false)} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 12px',
+                          border: '1px solid #dc2626',
+                          borderRadius: '8px',
+                          background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                          cursor: 'pointer',
+                          boxShadow: '0px 1px 2px rgba(0,0,0,0.05)'
+                        }}>
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M4 4l8 8M12 4l-8 8" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          <span style={{ fontSize: '14px', fontWeight: 500, color: '#dc2626' }}>Cancel</span>
+                        </button>
+                      </>
+                    ) : (
+                      <button onClick={() => setEditingAccountDetails(true)} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: '8px',
+                        background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                        cursor: 'pointer',
+                        boxShadow: '0px 1px 2px rgba(0,0,0,0.05)'
+                      }}>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M11.333 1.333a1.886 1.886 0 0 1 2.667 0 1.886 1.886 0 0 1 0 2.667l-8.667 8.667L2 13.333l.667-3.333 8.666-8.667z" stroke={colors.textPrimary} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary }}>Edit</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Card Body */}
+                <div style={{
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px'
+                }}>
+                  {/* Profile Avatar */}
+                  <div style={{ position: 'relative', display: 'inline-flex', width: 'fit-content' }}>
+                    <div style={{
+                      width: '84px',
+                      height: '84px',
+                      borderRadius: '999px',
+                      border: '2px solid rgba(147, 197, 253, 1)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white'
+                    }}>
+                      <img
+                        src="/assets/profile-avatar.png"
+                        alt="Profile"
+                        style={{
+                          width: '80px',
+                          height: '80px',
+                          borderRadius: '999px',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    </div>
+                    {/* Edit badge on avatar */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '-2px',
+                      right: '-2px',
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '999px',
+                      backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                      border: `1px solid ${colors.border}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer'
+                    }}>
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                        <path d="M11.333 1.333a1.886 1.886 0 0 1 2.667 0 1.886 1.886 0 0 1 0 2.667l-8.667 8.667L2 13.333l.667-3.333 8.666-8.667z" stroke={colors.textPrimary} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Form Fields Row */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '44px',
+                    alignItems: 'center',
+                    width: '100%'
+                  }}>
+                    {/* Account Name */}
+                    <div style={{ flex: 1, minWidth: '258px', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ padding: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Account Name</span>
+                      </div>
+                      <input
+                        type="text"
+                        defaultValue="Anmol Education"
+                        readOnly={!editingAccountDetails}
+                        style={{
+                          height: '40px',
+                          padding: '6px 12px',
+                          border: `1px solid ${editingAccountDetails ? '#a3a3a3' : colors.border}`,
+                          borderRadius: '8px',
+                          backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                          boxShadow: editingAccountDetails ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
+                          fontSize: '14px',
+                          color: colors.textPrimary,
+                          lineHeight: '20px',
+                          outline: 'none',
+                          fontFamily: 'inherit'
+                        }}
+                      />
+                    </div>
+
+                    {/* Account Email Address */}
+                    <div style={{ flex: 1, minWidth: '258px', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ padding: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Account Email Address</span>
+                      </div>
+                      <input
+                        type="email"
+                        defaultValue="arthur@alignui.com"
+                        readOnly={!editingAccountDetails}
+                        style={{
+                          height: '40px',
+                          padding: '6px 12px',
+                          border: `1px solid ${editingAccountDetails ? '#a3a3a3' : colors.border}`,
+                          borderRadius: '8px',
+                          backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                          boxShadow: editingAccountDetails ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
+                          fontSize: '14px',
+                          color: colors.textPrimary,
+                          lineHeight: '20px',
+                          outline: 'none',
+                          fontFamily: 'inherit'
+                        }}
+                      />
+                    </div>
+
+                    {/* Phone Number */}
+                    <div style={{ flex: 1, minWidth: '258px', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ padding: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Phone Number</span>
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        width: '100%',
+                        borderRadius: '8px',
+                        border: `1px solid ${editingAccountDetails ? '#a3a3a3' : colors.border}`,
+                        boxShadow: editingAccountDetails ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
+                        overflow: 'hidden'
+                      }}>
+                        {/* Country Code */}
+                        <div style={{
+                          height: '40px',
+                          padding: '6px 12px',
+                          borderRight: `1px solid ${editingAccountDetails ? '#a3a3a3' : colors.border}`,
+                          backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          cursor: 'pointer'
+                        }}>
+                          <img src="http://localhost:3845/assets/c7e4f7ed00a446953b564ef3562af52f24a0c4ae.svg" alt="US" style={{ width: '20px', height: '20px', borderRadius: '50%' }} />
+                          <span style={{ fontSize: '14px', color: colors.textPrimary }}>+1</span>
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M4 6l4 4 4-4" stroke={colors.textPrimary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                        {/* Phone Input */}
+                        <input
+                          type="tel"
+                          defaultValue="(555) 000-0000"
+                          readOnly={!editingAccountDetails}
+                          placeholder="(555) 000-0000"
+                          style={{
+                            flex: 1,
+                            height: '40px',
+                            padding: '6px 12px',
+                            border: 'none',
+                            backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                            fontSize: '14px',
+                            color: editingAccountDetails ? colors.textPrimary : colors.textMuted,
+                            lineHeight: '20px',
+                            outline: 'none',
+                            fontFamily: 'inherit'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Address Information Card */}
+              <div style={{
+                border: `1px solid ${colors.border}`,
+                borderRadius: '16px',
+                overflow: 'hidden'
+              }}>
+                {/* Card Header */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '16px',
+                  backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)'
+                }}>
+                  <span style={{
+                    fontSize: '16px',
+                    fontWeight: 500,
+                    color: colors.textPrimary,
+                    lineHeight: '24px'
+                  }}>Address Information</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {editingAddressInfo ? (
+                      <>
+                        <button onClick={() => setEditingAddressInfo(false)} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 12px',
+                          border: `1px solid ${colors.border}`,
+                          borderRadius: '8px',
+                          background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                          cursor: 'pointer',
+                          boxShadow: '0px 1px 2px rgba(0,0,0,0.05)'
+                        }}>
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <rect x="3" y="2" width="10" height="12" rx="1" stroke={colors.textPrimary} strokeWidth="1.2"/>
+                            <path d="M6 5h4M6 8h4" stroke={colors.textPrimary} strokeWidth="1.2" strokeLinecap="round"/>
+                          </svg>
+                          <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary }}>Save</span>
+                        </button>
+                        <button onClick={() => setEditingAddressInfo(false)} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 12px',
+                          border: '1px solid #dc2626',
+                          borderRadius: '8px',
+                          background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                          cursor: 'pointer',
+                          boxShadow: '0px 1px 2px rgba(0,0,0,0.05)'
+                        }}>
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M4 4l8 8M12 4l-8 8" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          <span style={{ fontSize: '14px', fontWeight: 500, color: '#dc2626' }}>Cancel</span>
+                        </button>
+                      </>
+                    ) : (
+                      <button onClick={() => setEditingAddressInfo(true)} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: '8px',
+                        background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                        cursor: 'pointer',
+                        boxShadow: '0px 1px 2px rgba(0,0,0,0.05)'
+                      }}>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M11.333 1.333a1.886 1.886 0 0 1 2.667 0 1.886 1.886 0 0 1 0 2.667l-8.667 8.667L2 13.333l.667-3.333 8.666-8.667z" stroke={colors.textPrimary} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary }}>Edit</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Card Body */}
+                <div style={{
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px'
+                }}>
+                  {/* Address Textarea */}
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ padding: '4px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Address</span>
+                    </div>
+                    <textarea
+                      defaultValue="B202 - Rose Garden"
+                      readOnly={!editingAddressInfo}
+                      style={{
+                        minHeight: '94px',
+                        padding: '6px 14px',
+                        border: `1px solid ${editingAddressInfo ? '#a3a3a3' : colors.border}`,
+                        borderRadius: '8px',
+                        backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                        boxShadow: editingAddressInfo ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
+                        resize: 'vertical' as const,
+                        fontSize: '14px',
+                        color: colors.textMuted,
+                        lineHeight: '20px',
+                        outline: 'none',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                  </div>
+
+                  {/* Zip, City, State, Country Row */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '44px',
+                    alignItems: 'center',
+                    width: '100%'
+                  }}>
+                    {/* Zip Code */}
+                    <div style={{ flex: 1, minWidth: '0', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ padding: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Zip Code</span>
+                      </div>
+                      <input
+                        type="text"
+                        defaultValue="411014"
+                        readOnly={!editingAddressInfo}
+                        style={{
+                          height: '40px',
+                          padding: '6px 12px',
+                          border: `1px solid ${editingAddressInfo ? '#a3a3a3' : colors.border}`,
+                          borderRadius: '8px',
+                          backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                          boxShadow: editingAddressInfo ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
+                          fontSize: '14px',
+                          color: colors.textPrimary,
+                          lineHeight: '20px',
+                          outline: 'none',
+                          fontFamily: 'inherit'
+                        }}
+                      />
+                    </div>
+
+                    {/* City */}
+                    <div style={{ flex: 1, minWidth: '0', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ padding: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>City</span>
+                      </div>
+                      <div style={{
+                        height: '36px',
+                        padding: '4px 12px',
+                        border: `1px solid ${editingAddressInfo ? '#a3a3a3' : colors.border}`,
+                        borderRadius: '8px',
+                        backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                        boxShadow: editingAddressInfo ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer'
+                      }}>
+                        <span style={{ fontSize: '14px', color: colors.textMuted, lineHeight: '20px' }}>Pune</span>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M4 6l4 4 4-4" stroke={colors.textMuted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* State */}
+                    <div style={{ flex: 1, minWidth: '0', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ padding: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>State</span>
+                      </div>
+                      <div style={{
+                        height: '36px',
+                        padding: '4px 12px',
+                        border: `1px solid ${editingAddressInfo ? '#a3a3a3' : colors.border}`,
+                        borderRadius: '8px',
+                        backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                        boxShadow: editingAddressInfo ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer'
+                      }}>
+                        <span style={{ fontSize: '14px', color: colors.textMuted, lineHeight: '20px' }}>Maharashtra</span>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M4 6l4 4 4-4" stroke={colors.textMuted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Country */}
+                    <div style={{ flex: 1, minWidth: '0', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ padding: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Country</span>
+                      </div>
+                      <div style={{
+                        height: '36px',
+                        padding: '4px 12px',
+                        border: `1px solid ${editingAddressInfo ? '#a3a3a3' : colors.border}`,
+                        borderRadius: '8px',
+                        backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                        boxShadow: editingAddressInfo ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer'
+                      }}>
+                        <span style={{ fontSize: '14px', color: colors.textMuted, lineHeight: '20px' }}>India</span>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M4 6l4 4 4-4" stroke={colors.textMuted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : activeNavigation === 'Teams' ? (
+          <>
+            {/* Teams Header */}
+            <header style={{
+              height: '56px',
+              padding: '0 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: `1px solid ${colors.border}`,
+              backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px'
+              }}>
+                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg" style={{
+                  width: '20px',
+                  cursor: 'pointer'
+                }} alt="back" onClick={() => setActiveNavigation('Listings')} />
+                <div style={{
+                  height: '16px',
+                  borderLeft: `1px solid ${colors.border}`
+                }} />
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <span style={{
+                    fontSize: '14px',
+                    color: colors.textSecondary,
+                    fontFamily: '"Geist Mono"',
+                    textTransform: 'uppercase'
+                  }}>Dashboard</span>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/42fc4aca-b2d6-4358-bd46-3ec69e3c9773.svg" style={{
+                    width: '14px'
+                  }} />
+                  <span style={{
+                    fontSize: '14px',
+                    color: colors.textPrimary,
+                    fontFamily: '"Geist Mono"',
+                    textTransform: 'uppercase'
+                  }}>Teams</span>
+                </div>
+              </div>
+              <button onClick={() => { setTeamModalMember({ name: '', email: '', role: 'Admin' }); setShowTeamModal(true); }} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 12px',
+                border: 'none',
+                borderRadius: '10px',
+                background: 'rgba(12, 99, 248, 1)',
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 500
+              }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 3v10M3 8h10" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                Add Member
+              </button>
+            </header>
+
+            {/* Teams Content */}
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white'
+            }}>
+              {/* Search Bar */}
+              <div style={{ padding: '12px 16px' }}>
+                <div style={{
+                  width: '320px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '0 8px',
+                  borderRadius: '8px',
+                  border: `1px solid ${colors.border}`,
+                  backgroundColor: colors.bg,
+                  boxShadow: '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={teamsSearchQuery}
+                    onChange={(e) => setTeamsSearchQuery(e.target.value)}
+                    placeholder="Search by name or email"
+                    style={{
+                      flex: 1,
+                      border: 'none',
+                      outline: 'none',
+                      fontSize: '14px',
+                      color: colors.textPrimary,
+                      backgroundColor: 'transparent',
+                      fontFamily: '"Geist", sans-serif'
+                    }}
+                  />
+                  <div style={{
+                    padding: '2px 6px',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    color: colors.textSecondary,
+                    fontFamily: '"Inter", sans-serif',
+                    letterSpacing: '0.48px',
+                    textTransform: 'uppercase'
+                  }}>⌘K</div>
+                </div>
+              </div>
+
+              {/* Teams Table */}
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{
+                      backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)',
+                      borderBottom: `1px solid ${colors.border}`,
+                      height: '42px'
+                    }}>
+                      <th style={{ padding: '0 16px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Partners</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Status</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Role</th>
+                      <th style={{ width: '140px', padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { name: 'Franklin Bennett', email: 'franklit@shadcnstudio.com', status: 'Pending', role: 'Admin', initial: 'F' },
+                      { name: 'Emily Carter', email: 'emily.carter@shadcnstudio.com', status: 'Pending', role: 'Admin', initial: 'E' },
+                      { name: 'Henry Smith', email: 'henry.smith@shadcnstudio.com', status: 'Not Booked', role: 'Admin', initial: 'H' },
+                      { name: 'Grace Lee', email: 'grace.lee@shadcnstudio.com', status: 'Active', role: 'Admin', initial: 'G' },
+                    ]
+                      .filter(member => {
+                        if (!teamsSearchQuery) return true;
+                        const q = teamsSearchQuery.toLowerCase();
+                        return member.name.toLowerCase().includes(q) || member.email.toLowerCase().includes(q);
+                      })
+                      .map((member, idx) => (
+                      <motion.tr
+                        key={`team-${idx}`}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: idx * 0.03, ease: [0.4, 0, 0.2, 1] }}
+                        style={{ borderBottom: `1px solid ${colors.border}`, height: '56px', backgroundColor: colors.bg }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDarkMode ? 'rgba(23, 23, 23, 0.6)' : 'rgba(250, 250, 250, 0.7)'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = colors.bg; }}
+                      >
+                        <td style={{ padding: '0 16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '50%',
+                              backgroundColor: getAvatarColors(idx).bg,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0
+                            }}>
+                              <span style={{
+                                color: getAvatarColors(idx).text,
+                                fontSize: '14px',
+                                fontWeight: 500
+                              }}>{member.initial}</span>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif' }}>{member.name}</div>
+                              <div style={{ fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>{member.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '0 8px' }}>{getStatusBadge(member.status)}</td>
+                        <td style={{ padding: '0 8px', fontSize: '14px', color: colors.textPrimary, fontFamily: '"Geist", sans-serif' }}>{member.role}</td>
+                        <td style={{ padding: '0 8px', textAlign: 'center' }}>
+                          <button
+                            onClick={() => { playClickSound(); setTeamModalMember({ name: member.name, email: member.email, role: member.role }); setShowTeamModal(true); }}
+                            style={{
+                              padding: '4px 12px',
+                              border: `1px solid ${colors.border}`,
+                              borderRadius: '6px',
+                              background: 'transparent',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: 500,
+                              color: colors.textPrimary,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                              <path d="M11.333 1.333a1.886 1.886 0 0 1 2.667 0 1.886 1.886 0 0 1 0 2.667l-8.667 8.667L2 13.333l.667-3.333 8.666-8.667z" stroke={colors.textPrimary} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            Edit Details
+                          </button>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
         ) : null}
       </main>
+
+      {/* Team Member Modal */}
+      <AnimatePresence>
+        {showTeamModal && teamModalMember && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowTeamModal(false)}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                zIndex: 200
+              }}
+            />
+            {/* Modal */}
+            <div style={{
+              position: 'fixed',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 201,
+              pointerEvents: 'none'
+            }}>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                style={{
+                  width: '400px',
+                  backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'white',
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '16px',
+                  boxShadow: '0px 16px 32px -12px rgba(14, 18, 27, 0.1)',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  pointerEvents: 'auto'
+                }}
+              >
+              {/* Modal Header */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                padding: '16px',
+                backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)',
+                borderBottom: `1px solid ${colors.border}`
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 12c0-2.21 1.79-4 4-4s4 1.79 4 4M4 20c0-2.76 3.58-5 8-5s8 2.24 8 5" stroke={colors.textPrimary} strokeWidth="1.5" strokeLinecap="round"/>
+                    <circle cx="12" cy="8" r="4" stroke={colors.textPrimary} strokeWidth="1.5"/>
+                  </svg>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>
+                    {teamModalMember.name ? 'Edit User' : 'Add Member'}
+                  </span>
+                </div>
+                <button onClick={() => setShowTeamModal(false)} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '6px',
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '8px',
+                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                  cursor: 'pointer',
+                  boxShadow: '0px 1px 2px rgba(0,0,0,0.05)'
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M4 4l8 8M12 4l-8 8" stroke={colors.textPrimary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div style={{
+                padding: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px'
+              }}>
+                {/* Full Name */}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ padding: '4px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Full Name</span>
+                  </div>
+                  <input
+                    type="text"
+                    defaultValue={teamModalMember.name}
+                    placeholder="Enter full name"
+                    style={{
+                      height: '36px',
+                      padding: '4px 12px',
+                      border: `1px solid ${colors.border}`,
+                      borderRadius: '8px',
+                      backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                      boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
+                      fontSize: '14px',
+                      color: colors.textPrimary,
+                      lineHeight: '20px',
+                      outline: 'none',
+                      fontFamily: 'inherit'
+                    }}
+                  />
+                </div>
+
+                {/* Email */}
+                <div style={{ display: 'flex', flexDirection: 'column', opacity: teamModalMember.name ? 0.5 : 1 }}>
+                  <div style={{ padding: '4px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Email</span>
+                  </div>
+                  <input
+                    type="email"
+                    defaultValue={teamModalMember.email}
+                    placeholder="Enter email"
+                    readOnly={!!teamModalMember.name}
+                    style={{
+                      height: '36px',
+                      padding: '4px 12px',
+                      border: `1px solid ${colors.border}`,
+                      borderRadius: '8px',
+                      backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                      boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
+                      fontSize: '14px',
+                      color: colors.textPrimary,
+                      lineHeight: '20px',
+                      outline: 'none',
+                      fontFamily: 'inherit'
+                    }}
+                  />
+                </div>
+
+                {/* Role */}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ padding: '4px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Role</span>
+                  </div>
+                  <div style={{
+                    height: '36px',
+                    padding: '4px 12px',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '8px',
+                    backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                    boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span style={{ fontSize: '14px', color: colors.textPrimary, lineHeight: '20px' }}>{teamModalMember.role || 'Admin'}</span>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ cursor: 'pointer' }}>
+                      <path d="M4 4l8 8M12 4l-8 8" stroke={colors.textSecondary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '16px 20px',
+                borderTop: `1px solid ${colors.border}`
+              }}>
+                {/* Remove user button */}
+                <button onClick={() => setShowTeamModal(false)} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  border: '1px solid #dc2626',
+                  borderRadius: '8px',
+                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                  cursor: 'pointer',
+                  boxShadow: '0px 1px 2px rgba(0,0,0,0.05)',
+                  flexShrink: 0
+                }}>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: '#dc2626', lineHeight: '20px' }}>Remove user</span>
+                </button>
+
+                {/* Update button */}
+                <button onClick={() => setShowTeamModal(false)} style={{
+                  flex: 1,
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px',
+                  padding: '6px 20px',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 100%), linear-gradient(90deg, rgb(12, 99, 248) 0%, rgb(12, 99, 248) 100%)',
+                  boxShadow: '0px 1px 2px 0px rgba(14, 18, 27, 0.24), 0px 0px 0px 1px #1b6df8',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 500
+                }}>
+                  {teamModalMember.name ? 'Update' : 'Add Member'}
+                </button>
+              </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Listing Detail Side Drawer */}
       <AnimatePresence>
