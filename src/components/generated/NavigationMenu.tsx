@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lottie from 'lottie-react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, ChevronLeft, ChevronRight, ArrowRight, ChevronDown, Eye } from 'lucide-react';
 interface NavigationMenuProps {
   initialMode?: 'light' | 'dark';
 }
@@ -15,7 +18,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   const [showFilters, setShowFilters] = useState(false);
   const [activeNavigation, setActiveNavigation] = useState('Listings');
   const [currentPage, setCurrentPage] = useState(1);
-  const [campaignsPage, setCampaignsPage] = useState(1);
+  // campaignsPage state removed - now using calendar view
   const [commissionsPage, setCommissionsPage] = useState(1);
   const [subPartnersPage, setSubPartnersPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
@@ -1209,198 +1212,291 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     { amberId: '48489985013', bookingId: '8W88994767', listing: 'Vita Student, Edinburgh', studentName: 'Ben Cooper', status: 'Confirmed', moveInDate: '03/26/2025', tenure: '48 Weeks' },
   ] as any[];
 
-  // Campaigns/Events data
-  const campaignsData = [
-    {
-      name: 'nikhil test',
-      email: 'nikhil.panse98@gmail.com',
-      status: 'Active',
-      role: 'Event',
-      initial: 'N',
-      color: 'rgba(202, 192, 255, 1)',
-      textColor: 'rgba(53, 26, 117, 1)'
-    },
-    {
-      name: 'Summer Campaign 2025',
-      email: 'campaign@amberstudent.com',
-      status: 'Active',
-      role: 'Campaign',
-      initial: 'S',
-      color: 'rgba(192, 234, 255, 1)',
-      textColor: 'rgba(18, 75, 104, 1)'
-    },
-    {
-      name: 'University Fair London',
-      email: 'fair@amberstudent.com',
-      status: 'Active',
-      role: 'Event',
-      initial: 'U',
-      color: 'rgba(192, 213, 255, 1)',
-      textColor: 'rgba(18, 35, 104, 1)'
-    },
-    {
-      name: 'Winter Intake Drive',
-      email: 'winter@amberstudent.com',
-      status: 'Inactive',
-      role: 'Campaign',
-      initial: 'W',
-      color: 'rgba(235, 235, 235, 1)',
-      textColor: 'rgba(23, 23, 23, 1)'
-    },
-    {
-      name: 'Study Abroad Expo',
-      email: 'expo@amberstudent.com',
-      status: 'Active',
-      role: 'Event',
-      initial: 'S',
-      color: 'rgba(255, 213, 234, 1)',
-      textColor: 'rgba(104, 45, 75, 1)'
-    },
-    {
-      name: 'Scholarship Program',
-      email: 'scholarship@amberstudent.com',
-      status: 'Active',
-      role: 'Campaign',
-      initial: 'S',
-      color: 'rgba(213, 255, 234, 1)',
-      textColor: 'rgba(45, 104, 75, 1)'
-    },
-    {
-      name: 'Virtual Open House',
-      email: 'virtual@amberstudent.com',
-      status: 'Active',
-      role: 'Event',
-      initial: 'V',
-      color: 'rgba(255, 234, 201, 1)',
-      textColor: 'rgba(104, 75, 30, 1)'
-    },
-    {
-      name: 'Spring Enrollment',
-      email: 'spring@amberstudent.com',
-      status: 'Inactive',
-      role: 'Campaign',
-      initial: 'S',
-      color: 'rgba(234, 213, 255, 1)',
-      textColor: 'rgba(75, 45, 104, 1)'
-    },
-    {
-      name: 'Career Guidance Workshop',
-      email: 'workshop@amberstudent.com',
-      status: 'Active',
-      role: 'Event',
-      initial: 'C',
-      color: 'rgba(213, 234, 255, 1)',
-      textColor: 'rgba(45, 75, 104, 1)'
-    },
-    {
-      name: 'Partner Meetup',
-      email: 'partner@amberstudent.com',
-      status: 'Active',
-      role: 'Event',
-      initial: 'P',
-      color: 'rgba(255, 213, 213, 1)',
-      textColor: 'rgba(104, 45, 45, 1)'
-    },
-    {
-      name: 'Graduate Program Launch',
-      email: 'graduate@amberstudent.com',
-      status: 'Active',
-      role: 'Campaign',
-      initial: 'G',
-      color: 'rgba(234, 255, 213, 1)',
-      textColor: 'rgba(75, 104, 45, 1)'
-    },
-    {
-      name: 'Alumni Networking',
-      email: 'alumni@amberstudent.com',
-      status: 'Inactive',
-      role: 'Event',
-      initial: 'A',
-      color: 'rgba(255, 234, 213, 1)',
-      textColor: 'rgba(104, 75, 45, 1)'
-    },
-    {
-      name: 'International Student Day',
-      email: 'isd@amberstudent.com',
-      status: 'Active',
-      role: 'Event',
-      initial: 'I',
-      color: 'rgba(213, 255, 255, 1)',
-      textColor: 'rgba(45, 104, 104, 1)'
-    },
-    {
-      name: 'Early Bird Discount',
-      email: 'earlybird@amberstudent.com',
-      status: 'Active',
-      role: 'Campaign',
-      initial: 'E',
-      color: 'rgba(255, 255, 213, 1)',
-      textColor: 'rgba(104, 104, 45, 1)'
-    },
-    {
-      name: 'Campus Tour Series',
-      email: 'tour@amberstudent.com',
-      status: 'Active',
-      role: 'Event',
-      initial: 'C',
-      color: 'rgba(234, 234, 255, 1)',
-      textColor: 'rgba(75, 75, 104, 1)'
-    },
-    {
-      name: 'Application Deadline Reminder',
-      email: 'deadline@amberstudent.com',
-      status: 'Active',
-      role: 'Campaign',
-      initial: 'A',
-      color: 'rgba(255, 213, 255, 1)',
-      textColor: 'rgba(104, 45, 104, 1)'
-    },
-    {
-      name: 'Student Success Stories',
-      email: 'stories@amberstudent.com',
-      status: 'Active',
-      role: 'Campaign',
-      initial: 'S',
-      color: 'rgba(213, 255, 213, 1)',
-      textColor: 'rgba(45, 104, 45, 1)'
-    },
-    {
-      name: 'Visa Assistance Workshop',
-      email: 'visa@amberstudent.com',
-      status: 'Active',
-      role: 'Event',
-      initial: 'V',
-      color: 'rgba(255, 234, 234, 1)',
-      textColor: 'rgba(104, 75, 75, 1)'
-    },
-    {
-      name: 'Housing Fair',
-      email: 'housing@amberstudent.com',
-      status: 'Inactive',
-      role: 'Event',
-      initial: 'H',
-      color: 'rgba(234, 255, 234, 1)',
-      textColor: 'rgba(75, 104, 75, 1)'
-    },
-    {
-      name: 'Referral Bonus Campaign',
-      email: 'referral@amberstudent.com',
-      status: 'Active',
-      role: 'Campaign',
-      initial: 'R',
-      color: 'rgba(255, 255, 234, 1)',
-      textColor: 'rgba(104, 104, 75, 1)'
-    },
-    {
-      name: 'Test Prep Seminar',
-      email: 'testprep@amberstudent.com',
-      status: 'Active',
-      role: 'Event',
-      initial: 'T',
-      color: 'rgba(234, 234, 234, 1)',
-      textColor: 'rgba(75, 75, 75, 1)'
+  // Campaigns calendar state
+  const [campaignCalendarMonth, setCampaignCalendarMonth] = useState(9); // October (0-indexed)
+  const [campaignCalendarYear, setCampaignCalendarYear] = useState(2024);
+  const [campaignCityFilter, setCampaignCityFilter] = useState('London');
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [calendarViewMode, setCalendarViewMode] = useState<'month' | 'week' | 'day'>('month');
+  const [showViewDropdown, setShowViewDropdown] = useState(false);
+  const [calendarSelectedDate, setCalendarSelectedDate] = useState(new Date(2024, 9, 22)); // Oct 22
+
+  const campaignCities = ['London', 'Manchester', 'Birmingham', 'Edinburgh', 'Dublin'];
+
+  // Campaign calendar events — per-day events with time (Untitled UI style)
+  interface CalendarEvent {
+    id: string;
+    title: string;
+    date: Date;
+    time: string;
+    color: 'blue' | 'orange' | 'pink' | 'green' | 'purple' | 'brand' | 'yellow' | 'indigo' | 'grey';
+    dot?: boolean;
+  }
+
+  const campaignCalendarEvents: CalendarEvent[] = [
+    { id: '1', title: 'Targeted Reach', date: new Date(2024, 9, 1), time: '9:00 am', color: 'blue' },
+    { id: '2', title: 'Property of the Day', date: new Date(2024, 9, 1), time: '2:00 pm', color: 'orange' },
+    { id: '3', title: 'Amber Exclusive', date: new Date(2024, 9, 3), time: '10:00 am', color: 'purple' },
+    { id: '4', title: 'UCAS Result', date: new Date(2024, 9, 3), time: '3:00 pm', color: 'grey' },
+    { id: '5', title: 'Property of the Day', date: new Date(2024, 9, 8), time: '9:00 am', color: 'orange' },
+    { id: '6', title: 'Social Media Kit', date: new Date(2024, 9, 8), time: '11:30 am', color: 'pink' },
+    { id: '7', title: 'Amber Exclusive', date: new Date(2024, 9, 8), time: '2:00 pm', color: 'purple' },
+    { id: '8', title: 'Design sync', date: new Date(2024, 9, 8), time: '4:00 pm', color: 'green' },
+    { id: '9', title: 'Social Media Kit', date: new Date(2024, 9, 14), time: '10:00 am', color: 'blue' },
+    { id: '10', title: 'Amber Exclusive', date: new Date(2024, 9, 15), time: '2:30 pm', color: 'purple' },
+    { id: '11', title: 'Property of the Day', date: new Date(2024, 9, 21), time: '9:00 am', color: 'orange' },
+    { id: '12', title: 'Deep work', date: new Date(2024, 9, 22), time: '2:30 pm', color: 'blue' },
+    { id: '13', title: 'One-on-one w/...', date: new Date(2024, 9, 22), time: '3:30 pm', color: 'pink' },
+    { id: '14', title: 'Campaign review', date: new Date(2024, 9, 22), time: '4:00 pm', color: 'green' },
+    { id: '15', title: 'Lunch with Oli...', date: new Date(2024, 9, 23), time: '5:30 pm', color: 'green', dot: true },
+    { id: '16', title: 'Friday standup', date: new Date(2024, 9, 24), time: '2:30 pm', color: 'grey' },
+    { id: '17', title: 'Olivia x Riley', date: new Date(2024, 9, 24), time: '3:30 pm', color: 'pink' },
+    { id: '18', title: 'Product demo', date: new Date(2024, 9, 24), time: '7:00 pm', color: 'purple' },
+    { id: '19', title: 'House inspec...', date: new Date(2024, 9, 25), time: '4:30 pm', color: 'yellow' },
+    { id: '20', title: "Ava's engag...", date: new Date(2024, 9, 26), time: '6:30 pm', color: 'pink', dot: true },
+    { id: '21', title: 'Monday stan...', date: new Date(2024, 9, 27), time: '2:30 pm', color: 'grey' },
+    { id: '22', title: 'Content plan...', date: new Date(2024, 9, 27), time: '4:30 pm', color: 'green' },
+    { id: '23', title: 'Product demo', date: new Date(2024, 9, 28), time: '4:00 pm', color: 'purple' },
+    { id: '24', title: 'Catch up w/...', date: new Date(2024, 9, 28), time: '8:00 pm', color: 'orange' },
+  ];
+
+  // Multi-day campaigns (spanning bars)
+  interface CalendarCampaign {
+    id: string;
+    title: string;
+    startDate: Date;
+    endDate: Date;
+    color: 'blue' | 'orange' | 'pink' | 'green' | 'purple' | 'brand' | 'yellow' | 'indigo' | 'grey';
+  }
+
+  const calendarCampaigns: CalendarCampaign[] = [
+    { id: 'c1', title: 'Targeted Reach', startDate: new Date(2024, 8, 29), endDate: new Date(2024, 9, 2), color: 'blue' },
+    { id: 'c2', title: 'Property of the Day', startDate: new Date(2024, 9, 1), endDate: new Date(2024, 9, 4), color: 'orange' },
+    { id: 'c3', title: 'Amber Exclusive', startDate: new Date(2024, 8, 30), endDate: new Date(2024, 9, 5), color: 'purple' },
+    { id: 'c4', title: 'Property of the Day', startDate: new Date(2024, 9, 8), endDate: new Date(2024, 9, 11), color: 'orange' },
+    { id: 'c5', title: 'Social Media Kit', startDate: new Date(2024, 9, 8), endDate: new Date(2024, 9, 10), color: 'pink' },
+    { id: 'c6', title: 'Amber Exclusive', startDate: new Date(2024, 9, 8), endDate: new Date(2024, 9, 12), color: 'purple' },
+    { id: 'c7', title: 'Social Media Kit', startDate: new Date(2024, 9, 13), endDate: new Date(2024, 9, 16), color: 'blue' },
+    { id: 'c8', title: 'Amber Exclusive', startDate: new Date(2024, 9, 20), endDate: new Date(2024, 9, 26), color: 'purple' },
+    { id: 'c9', title: 'Property of the day', startDate: new Date(2024, 9, 22), endDate: new Date(2024, 9, 25), color: 'blue' },
+    { id: 'c10', title: 'Property of the Day', startDate: new Date(2024, 9, 27), endDate: new Date(2024, 9, 30), color: 'orange' },
+  ];
+
+  // Get campaigns that overlap with a given week
+  const getCampaignsForWeek = (weekDays: { day: number; isCurrentMonth: boolean; date: Date }[]) => {
+    const weekStart = new Date(weekDays[0].date.getFullYear(), weekDays[0].date.getMonth(), weekDays[0].date.getDate());
+    const weekEnd = new Date(weekDays[6].date.getFullYear(), weekDays[6].date.getMonth(), weekDays[6].date.getDate());
+
+    const result: { campaign: CalendarCampaign; startCol: number; endCol: number }[] = [];
+    calendarCampaigns.forEach(campaign => {
+      const cStart = new Date(campaign.startDate.getFullYear(), campaign.startDate.getMonth(), campaign.startDate.getDate());
+      const cEnd = new Date(campaign.endDate.getFullYear(), campaign.endDate.getMonth(), campaign.endDate.getDate());
+
+      if (cEnd < weekStart || cStart > weekEnd) return;
+
+      let startCol = 0;
+      let endCol = 6;
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(weekDays[i].date.getFullYear(), weekDays[i].date.getMonth(), weekDays[i].date.getDate());
+        if (d.getTime() === cStart.getTime() || (i === 0 && cStart < weekStart)) {
+          startCol = i;
+        }
+      }
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(weekDays[i].date.getFullYear(), weekDays[i].date.getMonth(), weekDays[i].date.getDate());
+        if (d.getTime() === cEnd.getTime() || (i === 6 && cEnd > weekEnd)) {
+          endCol = i;
+        }
+      }
+
+      // Recalculate properly
+      startCol = -1;
+      endCol = -1;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(weekDays[i].date.getFullYear(), weekDays[i].date.getMonth(), weekDays[i].date.getDate());
+        if (d >= cStart && d <= cEnd) {
+          if (startCol === -1) startCol = i;
+          endCol = i;
+        }
+      }
+      if (startCol !== -1) {
+        result.push({ campaign, startCol, endCol });
+      }
+    });
+    return result;
+  };
+
+  // Assign rows to spanning campaigns (avoid overlaps)
+  const layoutCampaignRows = (campaigns: { campaign: CalendarCampaign; startCol: number; endCol: number }[]) => {
+    const rows: { campaign: CalendarCampaign; startCol: number; endCol: number; row: number }[] = [];
+    campaigns.forEach(c => {
+      let row = 0;
+      while (true) {
+        const conflict = rows.some(r => r.row === row && !(c.endCol < r.startCol || c.startCol > r.endCol));
+        if (!conflict) break;
+        row++;
+      }
+      rows.push({ ...c, row });
+    });
+    return rows;
+  };
+
+  // Campaign type list for sidebar
+  const campaignTypes = [
+    { name: 'Property of the day', duration: '3 Days', icon: '✅', iconColor: '#22c55e' },
+    { name: "Student's Choice", duration: '30 Days', icon: '✅', iconColor: '#22c55e' },
+    { name: 'Tik Tok Video', duration: '1 Day', icon: '🎵', iconColor: '#000' },
+    { name: 'WhatsApp Campaign', duration: '1 Day', icon: '💬', iconColor: '#25d366' },
+  ];
+
+  // Calendar helper functions
+  const calendarMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const calendarMonthShort = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+
+  const getCalendarDays = (month: number, year: number) => {
+    const firstDay = new Date(year, month, 1).getDay();
+    // Untitled UI starts on Monday
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    const days: { day: number; isCurrentMonth: boolean; date: Date }[] = [];
+
+    for (let i = startOffset - 1; i >= 0; i--) {
+      const d = daysInPrevMonth - i;
+      days.push({ day: d, isCurrentMonth: false, date: new Date(year, month - 1, d) });
     }
-  ] as any[];
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push({ day: i, isCurrentMonth: true, date: new Date(year, month, i) });
+    }
+    const remaining = Math.ceil(days.length / 7) * 7 - days.length;
+    for (let i = 1; i <= remaining; i++) {
+      days.push({ day: i, isCurrentMonth: false, date: new Date(year, month + 1, i) });
+    }
+    return days;
+  };
+
+  const getEventsForDate = (date: Date) => {
+    return campaignCalendarEvents.filter(event => {
+      return event.date.getDate() === date.getDate() &&
+        event.date.getMonth() === date.getMonth() &&
+        event.date.getFullYear() === date.getFullYear();
+    });
+  };
+
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
+  };
+
+  const navigateCalendarMonth = (direction: number) => {
+    let newMonth = campaignCalendarMonth + direction;
+    let newYear = campaignCalendarYear;
+    if (newMonth < 0) { newMonth = 11; newYear--; }
+    if (newMonth > 11) { newMonth = 0; newYear++; }
+    setCampaignCalendarMonth(newMonth);
+    setCampaignCalendarYear(newYear);
+  };
+
+  const getWeekNumber = (date: Date) => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  };
+
+  // Navigate based on view mode
+  const navigateCalendar = (direction: number) => {
+    if (calendarViewMode === 'month') {
+      navigateCalendarMonth(direction);
+    } else if (calendarViewMode === 'week') {
+      const newDate = new Date(calendarSelectedDate);
+      newDate.setDate(newDate.getDate() + direction * 7);
+      setCalendarSelectedDate(newDate);
+      setCampaignCalendarMonth(newDate.getMonth());
+      setCampaignCalendarYear(newDate.getFullYear());
+    } else {
+      const newDate = new Date(calendarSelectedDate);
+      newDate.setDate(newDate.getDate() + direction);
+      setCalendarSelectedDate(newDate);
+      setCampaignCalendarMonth(newDate.getMonth());
+      setCampaignCalendarYear(newDate.getFullYear());
+    }
+  };
+
+  const goToToday = () => {
+    const today = new Date();
+    setCampaignCalendarMonth(today.getMonth());
+    setCampaignCalendarYear(today.getFullYear());
+    setCalendarSelectedDate(today);
+  };
+
+  // Get the week (Mon-Sun) containing the selected date
+  const getWeekDays = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day; // Monday start
+    const monday = new Date(d);
+    monday.setDate(d.getDate() + diff);
+    const days: Date[] = [];
+    for (let i = 0; i < 7; i++) {
+      const dd = new Date(monday);
+      dd.setDate(monday.getDate() + i);
+      days.push(dd);
+    }
+    return days;
+  };
+
+  // Parse time string to hour number for positioning in week/day views
+  const parseTimeToHour = (time: string): number => {
+    const match = time.match(/(\d+):(\d+)\s*(am|pm)/i);
+    if (!match) return 12;
+    let h = parseInt(match[1]);
+    const m = parseInt(match[2]);
+    const period = match[3].toLowerCase();
+    if (period === 'pm' && h !== 12) h += 12;
+    if (period === 'am' && h === 12) h = 0;
+    return h + m / 60;
+  };
+
+  // Hours array for week/day time grid
+  const calendarHours = Array.from({ length: 14 }, (_, i) => i + 7); // 7am to 8pm
+
+  // Get header subtitle based on view
+  const getCalendarSubtitle = () => {
+    if (calendarViewMode === 'month') {
+      return `1 ${calendarMonthNames[campaignCalendarMonth].slice(0, 3)} ${campaignCalendarYear} – ${new Date(campaignCalendarYear, campaignCalendarMonth + 1, 0).getDate()} ${calendarMonthNames[campaignCalendarMonth].slice(0, 3)} ${campaignCalendarYear}`;
+    } else if (calendarViewMode === 'week') {
+      const weekDays = getWeekDays(calendarSelectedDate);
+      const start = weekDays[0];
+      const end = weekDays[6];
+      return `${start.getDate()} ${calendarMonthNames[start.getMonth()].slice(0, 3)} ${start.getFullYear()} – ${end.getDate()} ${calendarMonthNames[end.getMonth()].slice(0, 3)} ${end.getFullYear()}`;
+    } else {
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      return dayNames[calendarSelectedDate.getDay()];
+    }
+  };
+
+  const formatHour = (h: number) => {
+    if (h === 0) return '12 am';
+    if (h < 12) return `${h} am`;
+    if (h === 12) return '12 pm';
+    return `${h - 12} pm`;
+  };
+
+  // Event color tokens via CSS variables (themeable light/dark)
+  const getEventColorStyles = (color: string) => {
+    const c = ['blue','orange','pink','green','purple','brand','yellow','indigo','grey'].includes(color) ? color : 'blue';
+    return {
+      bg: `var(--event-${c}-bg)`,
+      border: `var(--event-${c}-border)`,
+      text: `var(--event-${c}-text)`,
+      time: `var(--event-${c}-time)`,
+    };
+  };
   
   // Commissions data
   const commissionsData = [
@@ -1933,66 +2029,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     return pages;
   };
   
-  // Campaigns pagination logic
-  const campaignsTotalItems = campaignsData.length;
-  const campaignsTotalPages = Math.ceil(campaignsTotalItems / itemsPerPage);
-  const campaignsStartIndex = (campaignsPage - 1) * itemsPerPage;
-  const campaignsEndIndex = campaignsStartIndex + itemsPerPage;
-  const currentCampaignsData = campaignsData.slice(campaignsStartIndex, campaignsEndIndex);
-  const campaignsStartItem = campaignsStartIndex + 1;
-  const campaignsEndItem = Math.min(campaignsEndIndex, campaignsTotalItems);
-
-  const handleCampaignsPrevious = () => {
-    if (campaignsPage > 1) {
-      setCampaignsPage(campaignsPage - 1);
-    }
-  };
-
-  const handleCampaignsNext = () => {
-    if (campaignsPage < campaignsTotalPages) {
-      setCampaignsPage(campaignsPage + 1);
-    }
-  };
-
-  const handleCampaignsPageClick = (page: number) => {
-    if (page !== -1) {
-      setCampaignsPage(page);
-    }
-  };
-
-  const getCampaignsPageNumbers = () => {
-    const pages: number[] = [];
-    const maxVisible = 4;
-    
-    if (campaignsTotalPages <= maxVisible) {
-      for (let i = 1; i <= campaignsTotalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (campaignsPage <= 2) {
-        for (let i = 1; i <= 3; i++) {
-          pages.push(i);
-        }
-        pages.push(-1);
-        pages.push(campaignsTotalPages);
-      } else if (campaignsPage >= campaignsTotalPages - 1) {
-        pages.push(1);
-        pages.push(-1);
-        for (let i = campaignsTotalPages - 2; i <= campaignsTotalPages; i++) {
-          pages.push(i);
-        }
-      } else {
-        pages.push(1);
-        pages.push(-1);
-        pages.push(campaignsPage - 1);
-        pages.push(campaignsPage);
-        pages.push(campaignsPage + 1);
-        pages.push(-1);
-        pages.push(campaignsTotalPages);
-      }
-    }
-    return pages;
-  };
+  // Campaigns pagination removed - now using calendar view
 
   // Filter Listings data
   const filteredListingsData = listingsData.filter((item: any) => {
@@ -2693,7 +2730,9 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          position: 'relative'
+          position: 'relative',
+          overflow: 'hidden',
+          minWidth: 0
         }}
       >
         {activeNavigation === 'Listings' ? (
@@ -3442,329 +3481,356 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
           </>
         ) : activeNavigation === 'Campaigns' ? (
           <>
-            {/* Campaigns/Events Header */}
-            <header style={{
-              height: '56px',
-              padding: '0 24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              borderBottom: `1px solid ${colors.border}`,
-              backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px'
-              }}>
-                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg" style={{
-                  width: '20px'
-                }} alt="back" />
-                <div style={{
-                  height: '16px',
-                  borderLeft: `1px solid ${colors.border}`
-                }} />
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <span style={{
-                    fontSize: '14px',
-              color: colors.textSecondary,
-                    fontFamily: '"Geist Mono"',
-                    textTransform: 'uppercase'
-                  }}>Dashboard</span>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/42fc4aca-b2d6-4358-bd46-3ec69e3c9773.svg" style={{
-                    width: '14px'
-                  }} />
-                  <span style={{
-                    fontSize: '14px',
-                    color: colors.textPrimary,
-                    fontFamily: '"Geist Mono"',
-                    textTransform: 'uppercase'
-                  }}>Campaigns</span>
-                </div>
-              </div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px'
-              }}>
-              <button style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 12px',
-              border: `1px solid ${colors.border}`,
-              borderRadius: '8px',
-                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-              cursor: 'pointer'
-            }}>
-                  <img src={isDarkMode ? "https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/a7aea9d4-4862-4777-a667-d1f47c0a09a6.svg" : "https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/515ca86f-0c62-489e-ac2f-446ec51a901e.svg"} style={{
-                    width: '20px'
-                  }} />
-                  <span style={{
-                    color: isDarkMode ? 'white' : 'rgba(10, 10, 10, 1)',
-                    fontSize: '14px',
-                    fontWeight: 500
-                  }}>Export</span>
-                </button>
-                <button style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '6px 12px',
-                  border: 'none',
-                  borderRadius: '10px',
-                  background: 'rgba(12, 99, 248, 1)',
-                  color: 'white',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 500
-                }}>Add Campaign</button>
-              </div>
-            </header>
-
             <PageSection pageKey="Campaigns">
-            {/* Campaigns/Events Table */}
-            <div style={{
-              flex: 1,
-              overflow: 'auto',
-              borderTop: `1px solid ${colors.border}`
-            }}>
-              <table style={{
-                width: '100%',
-                borderCollapse: 'collapse'
-              }}>
-                <thead>
-                  <tr style={{
-                    backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)',
-                    borderBottom: `1px solid ${colors.border}`
-                  }}>
-                    <th style={{
-                      textAlign: 'left',
-                      padding: '12px 24px',
-                      fontSize: '13px',
-                      color: colors.textSecondary,
-                      fontFamily: '"Geist Mono"',
-                      fontWeight: 500
-                    }}>NAME</th>
-                    <th style={{
-                      textAlign: 'left',
-                      padding: '12px 8px',
-                      fontSize: '13px',
-                      color: colors.textSecondary,
-                      fontFamily: '"Geist Mono"',
-                      fontWeight: 500
-                    }}>STATUS</th>
-                    <th style={{
-                      textAlign: 'left',
-                      padding: '12px 16px',
-                      fontSize: '13px',
-                      color: colors.textSecondary,
-                      fontFamily: '"Geist Mono"',
-                      fontWeight: 500
-                    }}>EMAIL</th>
-                    <th style={{
-                      textAlign: 'left',
-                      padding: '12px 8px',
-                      fontSize: '13px',
-                      color: colors.textSecondary,
-                      fontFamily: '"Geist Mono"',
-                      fontWeight: 500
-                    }}>ROLE</th>
-                    <th style={{
-                      textAlign: 'left',
-                      padding: '12px 8px',
-                      fontSize: '13px',
-                      color: colors.textSecondary,
-                      fontFamily: '"Geist Mono"',
-                      fontWeight: 500
-                    }}>SHARING LINK</th>
-                    <th style={{
-                      textAlign: 'right',
-                      padding: '12px 24px',
-                      fontSize: '13px',
-                      color: colors.textSecondary,
-                      fontFamily: '"Geist Mono"',
-                      fontWeight: 500
-                    }}>ACTION</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentCampaignsData.map((campaign, i) => <motion.tr
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{
-                      duration: 0.3,
-                      delay: i * 0.03,
-                      ease: [0.4, 0, 0.2, 1]
-                    }}
-                    style={{
-                      borderBottom: `1px solid ${colors.border}`
-                    }}
+            {/* Campaigns Calendar — Untitled UI */}
+            <div className="flex flex-1 overflow-hidden min-w-0 max-w-full font-sans antialiased h-full">
+              {/* Left: Calendar */}
+              <div className="flex flex-1 flex-col overflow-hidden bg-background min-w-0">
+                {/* Header bar */}
+                <div className="flex items-center justify-between h-14 px-6 border-b border-border shrink-0">
+                  {/* Left: Page title with city dropdown */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-lg font-semibold text-foreground tracking-tight">Campaigns in</span>
+                    <Select value={campaignCityFilter} onValueChange={(value) => setCampaignCityFilter(value)}>
+                      <SelectTrigger className="border-none shadow-none text-lg font-semibold text-blue-600 gap-1 px-1 h-auto focus-visible:ring-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {campaignCities.map(city => (
+                          <SelectItem key={city} value={city}>{city}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Right: month + controls */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-foreground" style={{ fontFamily: '"Geist Mono", monospace' }}>
+                      {calendarMonthNames[campaignCalendarMonth]} {campaignCalendarYear}
+                    </span>
+                    {/* Nav: < Today > */}
+                    <div className="flex">
+                      <Button variant="outline" size="icon" onClick={() => navigateCalendar(-1)} className="rounded-r-none">
+                        <ChevronLeft className="size-5" />
+                      </Button>
+                      <Button variant="outline" onClick={goToToday} className="rounded-none border-x-0 px-4 font-semibold">
+                        Today
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={() => navigateCalendar(1)} className="rounded-l-none">
+                        <ChevronRight className="size-5" />
+                      </Button>
+                    </div>
+
+                    {/* View mode dropdown */}
+                    <Select value={calendarViewMode} onValueChange={(value: 'month' | 'week' | 'day') => setCalendarViewMode(value)}>
+                      <SelectTrigger className="w-[140px] font-semibold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="month">Month view</SelectItem>
+                        <SelectItem value="week">Week view</SelectItem>
+                        <SelectItem value="day">Day view</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Button
+                      className="rounded-[10px] font-medium text-sm text-white tracking-[-0.084px] border border-white/12 shadow-[0px_1px_2px_0px_rgba(14,18,27,0.24),0px_0px_0px_1px_var(--cta-primary-ring)] hover:brightness-110"
+                      style={{ backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 100%), linear-gradient(90deg, var(--cta-primary) 0%, var(--cta-primary) 100%)' }}
+                    >
+                      <Plus className="size-5" />
+                      Add event
+                    </Button>
+                  </div>
+                </div>
+
+                {/* ========== MONTH VIEW ========== */}
+                {calendarViewMode === 'month' && (
+                  <>
+                    <div className="grid grid-cols-7 border-b border-border shrink-0 bg-muted">
+                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
+                        <div key={day} className="py-2.5 text-xs font-medium text-muted-foreground text-center uppercase tracking-widest" style={{
+                          borderRight: i < 6 ? '1px solid var(--color-border)' : 'none',
+                          fontFamily: '"Geist Mono", monospace'
+                        }}>{day}</div>
+                      ))}
+                    </div>
+                    <div className="flex flex-col flex-1 overflow-hidden">
+                      {(() => {
+                        const allDays = getCalendarDays(campaignCalendarMonth, campaignCalendarYear);
+                        const totalWeeks = Math.ceil(allDays.length / 7);
+                        return Array.from({ length: totalWeeks }).map((_, weekIndex) => {
+                          const weekDays = allDays.slice(weekIndex * 7, (weekIndex + 1) * 7);
+                          return (
+                            <div key={weekIndex} className="grid grid-cols-7 border-b border-border flex-1 min-h-0">
+                              {weekDays.map((dayInfo, colIdx) => {
+                                const today = isToday(dayInfo.date);
+                                const dayEvents = getEventsForDate(dayInfo.date);
+                                const maxShow = 3;
+                                const visibleEvents = dayEvents.slice(0, maxShow);
+                                const moreCount = dayEvents.length - maxShow;
+                                return (
+                                  <div key={colIdx} onClick={() => { setCalendarSelectedDate(dayInfo.date); setCalendarViewMode('day'); }} className="flex flex-col cursor-pointer overflow-hidden min-w-0 p-1 bg-background" style={{
+                                    borderRight: colIdx < 6 ? '1px solid var(--color-border)' : 'none'
+                                  }}>
+                                    {/* Day number */}
+                                    <div className="px-1 pt-0.5 pb-1.5 flex justify-start">
+                                      {today ? (
+                                        <span className="text-sm font-semibold text-primary-foreground bg-primary rounded-full w-7 h-7 flex items-center justify-center" style={{ fontFamily: '"Geist Mono", monospace' }}>{dayInfo.day}</span>
+                                      ) : (
+                                        <span className={`text-sm w-7 h-7 flex items-center justify-center ${dayInfo.isCurrentMonth ? 'text-foreground' : 'text-muted-foreground/50'}`} style={{ fontFamily: '"Geist Mono", monospace' }}>{dayInfo.day}</span>
+                                      )}
+                                    </div>
+                                    {/* Events */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, width: '100%', minWidth: 0 }}>
+                                      {visibleEvents.map((evt) => {
+                                        const cs = getEventColorStyles(evt.color);
+                                        return (
+                                          <div key={evt.id} style={{
+                                            display: 'flex', alignItems: 'center',
+                                            background: cs.bg,
+                                            border: `1px solid ${cs.border}`,
+                                            borderRadius: '6px',
+                                            padding: '4px 8px',
+                                            overflow: 'hidden', gap: '2px',
+                                            width: '100%', boxSizing: 'border-box'
+                                          }}>
+                                            {evt.dot && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: cs.text, flexShrink: 0, marginRight: '2px' }} />}
+                                            <span style={{
+                                              fontSize: '12px', fontWeight: 600, color: cs.text,
+                                              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                              lineHeight: '18px', flex: 1, minWidth: 0
+                                            }}>{evt.title}</span>
+                                            <span style={{
+                                              fontSize: '12px', fontWeight: 400, color: cs.time,
+                                              whiteSpace: 'nowrap', flexShrink: 0,
+                                              lineHeight: '18px'
+                                            }}>{evt.time}</span>
+                                          </div>
+                                        );
+                                      })}
+                                      {moreCount > 0 && (
+                                        <span className="text-xs font-medium text-muted-foreground cursor-pointer pl-1">{moreCount} more...</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </>
+                )}
+
+                {/* ========== WEEK VIEW ========== */}
+                {calendarViewMode === 'week' && (() => {
+                  const weekDays = getWeekDays(calendarSelectedDate);
+                  const dayNamesShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                  return (
+                    <>
+                      {/* Day column headers with dates */}
+                      <div className="grid border-b border-border bg-muted" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+                        <div className="border-r border-border" />
+                        {weekDays.map((d, i) => {
+                          const today = isToday(d);
+                          return (
+                            <div key={i} onClick={() => { setCalendarSelectedDate(d); setCalendarViewMode('day'); }} className="py-2.5 text-center cursor-pointer" style={{
+                              borderRight: i < 6 ? '1px solid var(--color-border)' : 'none'
+                            }}>
+                              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide" style={{ fontFamily: '"Geist Mono", monospace' }}>
+                                {dayNamesShort[i]}
+                              </span>
+                              {' '}
+                              {today ? (
+                                <span className="text-sm font-semibold text-primary-foreground bg-primary rounded-full w-[26px] h-[26px] inline-flex items-center justify-center" style={{ fontFamily: '"Geist Mono", monospace' }}>{d.getDate()}</span>
+                              ) : (
+                                <span className="text-sm font-medium text-foreground" style={{ fontFamily: '"Geist Mono", monospace' }}>{d.getDate()}</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Time grid */}
+                      <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
+                        {calendarHours.map(hour => (
+                          <div key={hour} className="grid min-h-16 border-b border-border/50" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+                            {/* Time label */}
+                            <div className="pt-1 pr-2 text-right text-xs text-muted-foreground border-r border-border">{formatHour(hour)}</div>
+
+                            {/* 7 day columns */}
+                            {weekDays.map((d, colIdx) => {
+                              const dayEvents = getEventsForDate(d);
+                              const hourEvents = dayEvents.filter(evt => {
+                                const h = parseTimeToHour(evt.time);
+                                return Math.floor(h) === hour;
+                              });
+                              return (
+                                <div key={colIdx} className="p-0.5 relative" style={{
+                                  borderRight: colIdx < 6 ? '1px solid var(--color-border)' : 'none'
+                                }}>
+                                  {hourEvents.map(evt => {
+                                    const cs = getEventColorStyles(evt.color);
+                                    return (
+                                      <div key={evt.id} style={{
+                                        background: cs.bg, border: `1px solid ${cs.border}`,
+                                        borderRadius: '6px', padding: '6px 8px',
+                                        marginBottom: '4px', cursor: 'pointer',
+                                        minHeight: '44px', position: 'relative'
+                                      }}>
+                                        {evt.dot && <span style={{ position: 'absolute', top: '8px', right: '8px', width: '6px', height: '6px', borderRadius: '50%', background: cs.text }} />}
+                                        <div style={{ fontSize: '12px', fontWeight: 600, color: cs.text, lineHeight: '18px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{evt.title}</div>
+                                        <div style={{ fontSize: '12px', fontWeight: 400, color: cs.time, lineHeight: '18px' }}>{evt.time}</div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+
+                        {/* Current time indicator */}
+                        {(() => {
+                          const now = new Date();
+                          const currentHour = now.getHours() + now.getMinutes() / 60;
+                          if (currentHour >= calendarHours[0] && currentHour <= calendarHours[calendarHours.length - 1] + 1) {
+                            const topPx = (currentHour - calendarHours[0]) * 64;
+                            const todayIdx = weekDays.findIndex(d => isToday(d));
+                            if (todayIdx >= 0) {
+                              return (
+                                <div className="absolute h-0.5 bg-ring z-5 pointer-events-none" style={{ top: `${topPx}px`, left: '60px', right: 0 }}>
+                                  <div className="absolute -left-[5px] -top-1 w-2.5 h-2.5 rounded-full bg-ring" />
+                                  {/* Time label */}
+                                  <span className="absolute -left-[58px] -top-2 text-xs text-ring font-medium w-[50px] text-right">
+                                    {now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase().replace(' ', ' ')}
+                                  </span>
+                                </div>
+                              );
+                            }
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    </>
+                  );
+                })()}
+
+                {/* ========== DAY VIEW ========== */}
+                {calendarViewMode === 'day' && (() => {
+                  const dayEvents = getEventsForDate(calendarSelectedDate);
+                  return (
+                    <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
+                      {calendarHours.map(hour => (
+                        <div key={hour} className="grid min-h-[72px] border-b border-border/50" style={{ gridTemplateColumns: '60px 1fr' }}>
+                          <div className="pt-1 pr-2 text-right text-xs text-muted-foreground border-r border-border">{formatHour(hour)}</div>
+                          <div style={{ padding: '2px 8px', position: 'relative' }}>
+                            {dayEvents.filter(evt => Math.floor(parseTimeToHour(evt.time)) === hour).map(evt => {
+                              const cs = getEventColorStyles(evt.color);
+                              return (
+                                <div key={evt.id} style={{
+                                  background: cs.bg, border: `1px solid ${cs.border}`,
+                                  borderRadius: '6px', padding: '10px 14px',
+                                  marginBottom: '4px', cursor: 'pointer',
+                                  minHeight: '60px', position: 'relative'
+                                }}>
+                                  {evt.dot && <span style={{ position: 'absolute', top: '10px', right: '12px', width: '7px', height: '7px', borderRadius: '50%', background: cs.text }} />}
+                                  <div style={{ fontSize: '14px', fontWeight: 600, color: cs.text, lineHeight: '20px' }}>{evt.title}</div>
+                                  <div style={{ fontSize: '13px', fontWeight: 400, color: cs.time, lineHeight: '20px' }}>{evt.time}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Current time indicator */}
+                      {isToday(calendarSelectedDate) && (() => {
+                        const now = new Date();
+                        const currentHour = now.getHours() + now.getMinutes() / 60;
+                        if (currentHour >= calendarHours[0] && currentHour <= calendarHours[calendarHours.length - 1] + 1) {
+                          const topPx = (currentHour - calendarHours[0]) * 72;
+                          return (
+                            <div className="absolute h-0.5 bg-ring z-5 pointer-events-none" style={{ top: `${topPx}px`, left: '60px', right: 0 }}>
+                              <div className="absolute -left-[5px] -top-1 w-2.5 h-2.5 rounded-full bg-ring" />
+                              <span className="absolute -left-[58px] -top-2 text-xs text-ring font-medium w-[50px] text-right">
+                                {now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase()}
+                              </span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Right Sidebar */}
+              <div className="w-[280px] border-l border-border flex flex-col bg-background shrink-0 overflow-hidden">
+                {/* Total Balance Card */}
+                <div className="m-4 p-5 pb-[18px] rounded-xl relative overflow-hidden" style={{ background: 'linear-gradient(180deg, var(--card-balance-from) 0%, var(--card-balance-to) 100%)', border: '1px solid var(--card-balance-border)' }}>
+                  <div className="absolute top-3.5 right-3.5 w-11 h-11 rounded-full flex items-center justify-center shadow-md" style={{ background: 'linear-gradient(135deg, var(--card-gold-from) 0%, var(--card-gold-to) 100%)' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" fill="#fff" fillOpacity="0.3"/>
+                      <circle cx="12" cy="12" r="6" fill="#fff" fillOpacity="0.5"/>
+                    </svg>
+                  </div>
+                  <span className="text-sm text-muted-foreground font-medium">Total Balance</span>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <div className="w-3.5 h-3.5 rounded-full" style={{ background: 'linear-gradient(135deg, var(--card-gold-from), var(--card-gold-to))' }} />
+                    <span className="text-3xl font-bold text-foreground tracking-tight leading-[38px]" style={{ fontFamily: '"Geist Mono", monospace' }}>121,345</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1 mb-4">Last activity 26/09/24</p>
+                  <Button variant="outline" className="font-semibold">
+                    <Eye className="size-4" />
+                    See Details
+                  </Button>
+                </div>
+
+                {/* Launch Campaigns Card */}
+                <div className="mx-4 mb-4 p-6 rounded-xl text-white relative overflow-hidden flex-1" style={{ background: 'linear-gradient(135deg, var(--card-campaign-from) 0%, var(--card-campaign-mid) 40%, var(--card-campaign-to) 100%)' }}>
+                  <svg className="absolute top-[18px] right-[18px] opacity-40" width="20" height="20" viewBox="0 0 24 24" fill="white">
+                    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/>
+                  </svg>
+                  <h3 className="text-xl font-bold leading-7 mb-2 max-w-[200px] tracking-tight">Launch campaigns, promote your property</h3>
+                  <p className="text-sm opacity-80 leading-5 mb-5 max-w-[220px]">Drive bookings and boost visibility with tailored campaign launches.</p>
+                  <Button
+                    className="group rounded-[10px] font-medium text-sm text-white tracking-[-0.084px] border border-white/12 shadow-[0px_1px_2px_0px_rgba(14,18,27,0.24),0px_0px_0px_1px_var(--cta-primary-ring)] hover:brightness-110"
+                    style={{ backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 100%), linear-gradient(90deg, var(--cta-primary) 0%, var(--cta-primary) 100%)' }}
                   >
-                    <td style={{
-                      padding: '8px 24px'
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px'
+                    Request to book
+                    <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                  </Button>
+
+                  <div style={{
+                    marginTop: '24px', background: 'rgba(255,255,255,0.12)',
+                    borderRadius: '12px', padding: '8px 12px',
+                    border: '1px solid rgba(255,255,255,0.12)'
+                  }}>
+                    {campaignTypes.map((ct, i) => (
+                      <div key={i} style={{
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                        padding: '10px 4px',
+                        borderBottom: i < campaignTypes.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none'
                       }}>
                         <div style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          backgroundColor: getAvatarColors(i).bg,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          <span style={{
-                            color: getAvatarColors(i).text,
-                            fontSize: '14px',
-                            fontWeight: 500
-                          }}>{campaign.initial}</span>
+                          width: '28px', height: '28px', borderRadius: '50%',
+                          background: 'rgba(255,255,255,0.15)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '14px', flexShrink: 0
+                        }}>{ct.icon}</div>
+                        <div>
+                          <div style={{ fontSize: '14px', fontWeight: 600, lineHeight: '20px' }}>{ct.name}</div>
+                          <div style={{ fontSize: '12px', opacity: 0.6, lineHeight: '18px' }}>{ct.duration}</div>
                         </div>
-                        <span style={{
-                          fontSize: '14px',
-                          fontWeight: 500,
-                          color: colors.textPrimary
-                        }}>{campaign.name}</span>
                       </div>
-                    </td>
-                    <td style={{
-                      padding: '8px 8px'
-                    }}>{getStatusBadge(campaign.status)}</td>
-                    <td style={{
-                      padding: '8px 16px',
-                      fontSize: '14px',
-                      color: colors.textPrimary
-                    }}>{campaign.email}</td>
-                    <td style={{
-                      padding: '8px 8px',
-                      fontSize: '14px',
-                      color: colors.textPrimary
-                    }}>{campaign.role}</td>
-                    <td style={{
-                      padding: '8px 8px'
-                    }}>
-                      <button style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        padding: '4px 8px',
-                        backgroundColor: 'transparent',
-                        color: 'rgba(12, 99, 248, 1)',
-                        border: '1px solid rgba(12, 99, 248, 1)',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: 500
-                      }}>
-                        Refer
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M2.5 9.5L9.5 2.5M9.5 2.5H4.5M9.5 2.5V7.5" stroke="rgba(12, 99, 248, 1)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
-                    </td>
-                    <td style={{
-                      padding: '8px 24px',
-                      textAlign: 'right'
-                    }}>
-                      <button style={{
-                        padding: '4px 12px',
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: '6px',
-                        background: 'transparent',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: 500,
-                        color: colors.textPrimary
-                      }}>Edit Details</button>
-                    </td>
-                  </motion.tr>)}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Campaigns/Events Pagination Footer */}
-            <footer style={{
-              height: '68px',
-              padding: '0 24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              borderTop: `1px solid ${colors.border}`,
-              marginTop: 'auto',
-              backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'rgba(255, 255, 255, 1)'
-            }}>
-              <span style={{
-                fontSize: '14px',
-                color: colors.textSecondary
-              }}>Showing {campaignsStartItem} to {campaignsEndItem} of {campaignsTotalItems} entries</span>
-              <div style={{
-                display: 'flex',
-              gap: '4px'
-            }}>
-                <button onClick={handleCampaignsPrevious} disabled={campaignsPage === 1} style={{
-                  padding: '6px 12px',
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '8px',
-                  background: 'transparent',
-                  cursor: campaignsPage === 1 ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  opacity: campaignsPage === 1 ? 0.5 : 1
-                }}>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/01c076b6-3528-475d-af10-7b71b96e0863.svg" style={{
-                    width: '16px'
-                  }} />
-                  <span style={{
-                    color: colors.textPrimary,
-                    fontSize: '14px',
-                    fontWeight: 500
-                  }}>Previous</span>
-                </button>
-                {getCampaignsPageNumbers().map(page => <button key={page} onClick={() => handleCampaignsPageClick(page)} style={{
-                  width: '28px',
-                  height: '28px',
-                  border: page === campaignsPage ? (isDarkMode ? '1px solid rgba(115, 115, 115, 1)' : `1px solid ${colors.accent}`) : 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  backgroundColor: page === campaignsPage ? (isDarkMode ? 'rgba(82, 82, 91, 1)' : 'rgba(237, 243, 255, 1)') : 'transparent',
-                  color: page === campaignsPage ? (isDarkMode ? '#FFFFFF' : colors.accent) : colors.textPrimary
-                }}>
-                  {page === -1 ? '...' : page}
-                </button>)}
-                <button onClick={handleCampaignsNext} disabled={campaignsPage === campaignsTotalPages} style={{
-                  padding: '6px 12px',
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '8px',
-                  background: 'transparent',
-                  cursor: campaignsPage === campaignsTotalPages ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  opacity: campaignsPage === campaignsTotalPages ? 0.5 : 1
-                }}>
-                  <span style={{
-                    color: colors.textPrimary,
-                    fontSize: '14px',
-                    fontWeight: 500
-                  }}>Next</span>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/607c4c87-4637-410f-bdea-5d4899aac524.svg" style={{
-                width: '16px'
-              }} />
-              </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </footer>
+            </div>
             </PageSection>
           </>
         ) : activeNavigation === 'Reviews' ? (

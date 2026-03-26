@@ -17,5 +17,28 @@
     "lib": "@/lib",
     "hooks": "@/hooks"
   },
-  "iconLibrary": "lucide"
+  "iconLibrary": "lucide",
+  "registries": {
+    "@ss-components": {
+      "url": "https://shadcnstudio.com/r/components/{name}.json",
+      "params": {
+        "email": "subscriptions@amberstudent.com",
+        "license_key": "00B56B73-CD84-454A-88D3-67B970AB5154"
+      }
+    },
+    "@ss-themes": {
+      "url": "https://shadcnstudio.com/r/themes/{name}.json",
+      "params": {
+        "email": "subscriptions@amberstudent.com",
+        "license_key": "00B56B73-CD84-454A-88D3-67B970AB5154"
+      }
+    },
+    "@ss-blocks": {
+      "url": "https://shadcnstudio.com/r/blocks/{name}.json",
+      "params": {
+        "email": "subscriptions@amberstudent.com",
+        "license_key": "00B56B73-CD84-454A-88D3-67B970AB5154"
+      }
+    }
+  }
 }
