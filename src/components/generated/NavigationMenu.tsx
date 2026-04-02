@@ -1,9 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lottie from 'lottie-react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, ChevronLeft, ChevronRight, ArrowRight, ChevronDown, Eye } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, ChevronDown, ChevronsUpDown, DollarSign, Hand, ExternalLink, PieChart, Building2, Tag, ReceiptText, Star, CalendarRange, Download, ArrowUpDown, TrendingDown, TrendingUp, Calendar, CircleUser, Users, LogOut, Sun, Moon, Monitor, Palette, X, PanelLeft, FileInput } from 'lucide-react';
+
+/** Figma 5165:52512 — raster badge art (exported PNGs in /public/assets) */
+const SUB_PLAN_BASIC = '/assets/subscription-plan-basic.png';
+const SUB_PLAN_SILVER = '/assets/subscription-plan-silver.png';
+const SUB_PLAN_GOLD = '/assets/subscription-plan-gold.png';
+/** Light/box-shadow/default/xs */
+const SUB_BADGE_SHADOW_XS = '0px 1px 2px 0px rgba(0, 0, 0, 0.05)';
+
 interface NavigationMenuProps {
   initialMode?: 'light' | 'dark';
 }
@@ -17,23 +24,27 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [activeNavigation, setActiveNavigation] = useState('Listings');
+  const mainNavBeforeProfilePageRef = useRef<string>('Listings');
   const [currentPage, setCurrentPage] = useState(1);
   // campaignsPage state removed - now using calendar view
-  const [commissionsPage, setCommissionsPage] = useState(1);
+  const [invoicesPage, setInvoicesPage] = useState(1);
+  const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
+  const [invoiceStatusFilter, setInvoiceStatusFilter] = useState('');
+  const [invoiceAgeBucket, setInvoiceAgeBucket] = useState('');
+  const [invoiceSortKey, setInvoiceSortKey] = useState<'invoiceDate' | 'total' | 'balance' | 'dueDate' | ''>('');
+  const [invoiceSortDir, setInvoiceSortDir] = useState<'asc' | 'desc'>('asc');
   const [subPartnersPage, setSubPartnersPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [bookingTypeFilter, setBookingTypeFilter] = useState('');
   const [subPartnersStatusFilter, setSubPartnersStatusFilter] = useState('');
   const [subPartnersBookingTypeFilter, setSubPartnersBookingTypeFilter] = useState('');
   const [listingsPage, setListingsPage] = useState(1);
   const [listingsSearchQuery, setListingsSearchQuery] = useState('');
-  const [listingsProviderFilter, setListingsProviderFilter] = useState('');
+  const [listingsCityFilter, setListingsCityFilter] = useState('');
+  const [listingsStatusFilter, setListingsStatusFilter] = useState('');
   const [selectedListing, setSelectedListing] = useState<any>(null);
-  const [listingsSortField, setListingsSortField] = useState<string>('');
-  const [listingsSortDir, setListingsSortDir] = useState<'asc' | 'desc'>('asc');
   const [reviewsPage, setReviewsPage] = useState(1);
   const [bookingsPage, setBookingsPage] = useState(1);
   const itemsPerPage = 10;
+  const listingsItemsPerPage = 7;
   const [settingsTab, setSettingsTab] = useState('Brand Identity');
   const [brandColor, setBrandColor] = useState('#015A57');
   const [redirectionLink, setRedirectionLink] = useState('');
@@ -41,6 +52,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   const [processingAnimationData, setProcessingAnimationData] = useState<any>(null);
   const [isScrambling, setIsScrambling] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showCommissionModal, setShowCommissionModal] = useState(false);
   const [editingAccountDetails, setEditingAccountDetails] = useState(false);
   const [editingAddressInfo, setEditingAddressInfo] = useState(false);
   const [teamsSearchQuery, setTeamsSearchQuery] = useState('');
@@ -224,6 +236,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
       }}
       style={{
         flex: 1,
+        minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
         position: 'relative'
@@ -242,7 +255,11 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     cardBg: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(255, 255, 255, 1)',
     inputBg: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'rgba(255, 255, 255, 1)',
     accent: 'rgba(37, 99, 235, 1)',
-    white: 'rgba(255, 255, 255, 1)'
+    accentBlue: '#2563eb',
+    paginationBlue: '#1a6cf8',
+    paginationBlueBg: '#edf3ff',
+    white: 'rgba(255, 255, 255, 1)',
+    sidebarForeground: isDarkMode ? 'rgba(250, 250, 250, 1)' : '#404040'
   };
   
   const avatarColors = [
@@ -253,40 +270,47 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   ];
   const getAvatarColors = (index: number) => avatarColors[index % avatarColors.length];
 
-  // Helper function to get icon filter based on selection and theme
-  const getIconFilter = (isSelected: boolean) => {
-    if (!isSelected) {
-      if (isDarkMode) {
-        return 'grayscale(100%) brightness(1.4) invert(0.15)';
-      }
-      return 'grayscale(100%) brightness(0.6)';
-    }
-    if (isDarkMode) {
-      return 'brightness(0) saturate(100%) invert(100%)';
-    } else {
-      // #1B86FF for light mode (RGB: 27, 134, 255)
-      return 'brightness(0) saturate(100%) invert(11%) sepia(100%) saturate(7498%) hue-rotate(210deg) brightness(100%) contrast(100%)';
-    }
-  };
   const navItems = [{
     name: 'Insights',
-    icon: '/assets/icon-insights.svg'
+    iconKey: 'insights' as const
   }, {
     name: 'Listings',
-    icon: '/assets/icon-listings.svg'
+    iconKey: 'listings' as const
   }, {
     name: 'Bookings',
-    icon: '/assets/icon-bookings.svg'
+    iconKey: 'bookings' as const
   }, {
     name: 'Invoices',
-    icon: '/assets/icon-invoices.svg'
+    iconKey: 'invoices' as const
   }, {
     name: 'Reviews',
-    icon: '/assets/icon-reviews.svg'
+    iconKey: 'reviews' as const
   }, {
     name: 'Campaigns',
-    icon: '/assets/icon-campaigns.svg'
-  }] as any[];
+    iconKey: 'campaigns' as const
+  }] as const;
+
+  const renderSidebarNavIcon = (iconKey: typeof navItems[number]['iconKey'], selected: boolean) => {
+    const inactive = isDarkMode ? 'rgba(163, 163, 163, 0.95)' : '#737373';
+    const activeColor = selected ? (isDarkMode ? colors.white : colors.accentBlue) : inactive;
+    const common = { size: 16, strokeWidth: 1.75, color: activeColor, absoluteStrokeWidth: true as const };
+    switch (iconKey) {
+      case 'insights':
+        return <PieChart {...common} />;
+      case 'listings':
+        return <Building2 {...common} />;
+      case 'bookings':
+        return <Tag {...common} />;
+      case 'invoices':
+        return <ReceiptText {...common} />;
+      case 'reviews':
+        return <Star {...common} />;
+      case 'campaigns':
+        return <CalendarRange {...common} />;
+      default:
+        return null;
+    }
+  };
   const systemItems = [] as any[];
   const leadsData = [{
     name: 'Jack alfredo',
@@ -1130,29 +1154,47 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     created: '06/08/2025'
   }] as any[];
   
-  // Listings data
-  const listingsData = [
-    { invoiceNumber: 'INV-2025-0379', invoiceDate: '03/04/2025', totalAmount: '$75.00', balance: '$75.00', dueDate: '03/04/2025', status: 'Paid' },
-    { invoiceNumber: 'INV-2025-0570', invoiceDate: '03/04/2025', totalAmount: '$90.00', balance: '$150.00', dueDate: '03/04/2025', status: 'Overdue' },
-    { invoiceNumber: 'INV-2025-0380', invoiceDate: '03/04/2025', totalAmount: '$125.00', balance: '$200.00', dueDate: '03/04/2025', status: 'Paid' },
-    { invoiceNumber: 'INV-2025-0381', invoiceDate: '03/04/2025', totalAmount: '$45.00', balance: '$300.00', dueDate: '03/04/2025', status: 'Overdue' },
-    { invoiceNumber: 'INV-2025-0382', invoiceDate: '03/04/2025', totalAmount: '$200.00', balance: '$450.00', dueDate: '03/04/2025', status: 'Overdue' },
-    { invoiceNumber: 'INV-2025-0383', invoiceDate: '03/04/2025', totalAmount: '$60.00', balance: '$600.00', dueDate: '03/04/2025', status: 'Paid' },
-    { invoiceNumber: 'INV-2025-0384', invoiceDate: '03/04/2025', totalAmount: '$50.00', balance: '$750.00', dueDate: '03/04/2025', status: 'Paid' },
-    { invoiceNumber: 'INV-2025-0385', invoiceDate: '03/04/2025', totalAmount: '$30.00', balance: '$1000.00', dueDate: '03/04/2025', status: 'Overdue' },
-    { invoiceNumber: 'INV-2025-0386', invoiceDate: '03/04/2025', totalAmount: '$110.00', balance: '$1200.00', dueDate: '03/04/2025', status: 'Paid' },
-    { invoiceNumber: 'INV-2025-0387', invoiceDate: '03/04/2025', totalAmount: '$85.00', balance: '$1500.00', dueDate: '03/04/2025', status: 'Overdue' },
-    { invoiceNumber: 'INV-2025-0388', invoiceDate: '03/04/2025', totalAmount: '$150.00', balance: '$1800.00', dueDate: '03/04/2025', status: 'Paid' },
-    { invoiceNumber: 'INV-2025-0389', invoiceDate: '03/04/2025', totalAmount: '$95.00', balance: '$2000.00', dueDate: '03/04/2025', status: 'Paid' },
-    { invoiceNumber: 'INV-2025-0390', invoiceDate: '03/04/2025', totalAmount: '$40.00', balance: '$2200.00', dueDate: '03/04/2025', status: 'Overdue' },
-    { invoiceNumber: 'INV-2025-0391', invoiceDate: '03/04/2025', totalAmount: '$70.00', balance: '$2500.00', dueDate: '03/04/2025', status: 'Paid' },
-    { invoiceNumber: 'INV-2025-0392', invoiceDate: '03/04/2025', totalAmount: '$55.00', balance: '$2800.00', dueDate: '03/04/2025', status: 'Overdue' },
-    { invoiceNumber: 'INV-2025-0393', invoiceDate: '03/04/2025', totalAmount: '$120.00', balance: '$3000.00', dueDate: '03/04/2025', status: 'Paid' },
-    { invoiceNumber: 'INV-2025-0394', invoiceDate: '03/04/2025', totalAmount: '$65.00', balance: '$3200.00', dueDate: '03/04/2025', status: 'Paid' },
-    { invoiceNumber: 'INV-2025-0395', invoiceDate: '03/04/2025', totalAmount: '$80.00', balance: '$3500.00', dueDate: '03/04/2025', status: 'Overdue' },
-    { invoiceNumber: 'INV-2025-0396', invoiceDate: '03/04/2025', totalAmount: '$100.00', balance: '$3800.00', dueDate: '03/04/2025', status: 'Paid' },
-    { invoiceNumber: 'INV-2025-0397', invoiceDate: '03/04/2025', totalAmount: '$35.00', balance: '$4000.00', dueDate: '03/04/2025', status: 'Overdue' },
-  ] as any[];
+  // Listings — property table
+  const listingsData = (() => {
+    const properties = [
+      { title: 'Chapter Spitalfields, London', address: 'Folgate St, Spitalfields', city: 'London', image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400&h=250&fit=crop' },
+      { title: 'Urbanest Tower Bridge, London', address: 'Tooley St, London', city: 'London', image: 'https://images.unsplash.com/photo-1574362848149-11496d93a7c7?w=400&h=250&fit=crop' },
+      { title: 'iQ Shoreditch, London', address: 'Adler St, Whitechapel', city: 'London', image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=250&fit=crop' },
+      { title: 'Unite Students Stratford One', address: 'High St, Stratford', city: 'London', image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=250&fit=crop' },
+      { title: 'Scape Shoreditch, London', address: 'Bethnal Green Rd', city: 'London', image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=250&fit=crop' },
+      { title: 'Vita Student Lewisham', address: 'Thurston Rd, Lewisham', city: 'London', image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400&h=250&fit=crop' },
+      { title: 'Chapter Kings Cross, London', address: 'Pentonville Rd, London', city: 'London', image: 'https://images.unsplash.com/photo-1574362848149-11496d93a7c7?w=400&h=250&fit=crop' },
+      { title: 'iQ Will Wyatt Court, London', address: 'Miles St, Vauxhall', city: 'London', image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=250&fit=crop' },
+      { title: 'Fresh Student Living, Manchester', address: 'Great Marlborough St', city: 'Manchester', image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=250&fit=crop' },
+      { title: 'Unite Students, Manchester', address: 'Oxford Rd, Manchester', city: 'Manchester', image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=250&fit=crop' },
+      { title: 'Vita Student, Edinburgh', address: 'Fountainbridge, Edinburgh', city: 'Edinburgh', image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400&h=250&fit=crop' },
+      { title: 'Collegiate AC, Birmingham', address: 'Bagot St, Birmingham', city: 'Birmingham', image: 'https://images.unsplash.com/photo-1574362848149-11496d93a7c7?w=400&h=250&fit=crop' },
+      { title: 'CRM Students, Bristol', address: 'Redcliffe Way, Bristol', city: 'Bristol', image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=250&fit=crop' },
+      { title: 'Nido Student, Glasgow', address: 'Bell St, Glasgow', city: 'Glasgow', image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=250&fit=crop' },
+      { title: 'Liberty Living, Nottingham', address: 'Goldsmith St, Nottingham', city: 'Nottingham', image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=250&fit=crop' },
+      { title: 'Chapter Highbury, London', address: 'Holloway Rd, London', city: 'London', image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400&h=250&fit=crop' },
+      { title: 'Scape Wembley, London', address: 'Olympic Way, Wembley', city: 'London', image: 'https://images.unsplash.com/photo-1574362848149-11496d93a7c7?w=400&h=250&fit=crop' },
+      { title: 'iQ Hammersmith, London', address: 'Fulham Palace Rd', city: 'London', image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=250&fit=crop' },
+      { title: 'Student Roost, Leeds', address: 'Merrion Way, Leeds', city: 'Leeds', image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=250&fit=crop' },
+      { title: 'Prestige Student Living, Liverpool', address: 'Dale St, Liverpool', city: 'Liverpool', image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=250&fit=crop' },
+      { title: 'Scape Mile End, London', address: 'Mile End Rd, London', city: 'London', image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=400&h=250&fit=crop' },
+      { title: 'Chapter Portobello, London', address: 'Ladbroke Grove, London', city: 'London', image: 'https://images.unsplash.com/photo-1574362848149-11496d93a7c7?w=400&h=250&fit=crop' },
+      { title: 'Unite Students, Bristol', address: 'Nelson St, Bristol', city: 'Bristol', image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=250&fit=crop' },
+      { title: 'Vita Student, Manchester', address: 'First St, Manchester', city: 'Manchester', image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=250&fit=crop' },
+      { title: 'iQ Bankside, London', address: 'Sumner St, Southwark', city: 'London', image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=250&fit=crop' },
+    ];
+    const statuses = ['Active', 'Active', 'Active', 'Inactive', 'Active', 'Pending', 'Active', 'Inactive'];
+    const prices = [150, 175, 189, 200, 215, 225, 245, 265, 280, 300, 320, 350];
+    const units = ['week', 'week', 'week', 'month'];
+    return properties.map((p, i) => ({
+      ...p,
+      propertyName: p.title,
+      listingStatus: statuses[i % statuses.length],
+      priceAmount: prices[i % prices.length],
+      priceUnit: units[i % units.length],
+      type: i % 3 === 0 ? 'Private halls' : i % 3 === 1 ? 'Student housing' : 'Shared apartment'
+    }));
+  })() as any[];
 
   // Reviews data
   const reviewsData = [
@@ -1215,13 +1257,13 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   // Campaigns calendar state
   const [campaignCalendarMonth, setCampaignCalendarMonth] = useState(9); // October (0-indexed)
   const [campaignCalendarYear, setCampaignCalendarYear] = useState(2024);
-  const [campaignCityFilter, setCampaignCityFilter] = useState('London');
-  const [showCityDropdown, setShowCityDropdown] = useState(false);
-  const [calendarViewMode, setCalendarViewMode] = useState<'month' | 'week' | 'day'>('month');
-  const [showViewDropdown, setShowViewDropdown] = useState(false);
-  const [calendarSelectedDate, setCalendarSelectedDate] = useState(new Date(2024, 9, 22)); // Oct 22
 
-  const campaignCities = ['London', 'Manchester', 'Birmingham', 'Edinburgh', 'Dublin'];
+  const figmaCampaignCoin = 'https://www.figma.com/api/mcp/asset/db907827-b538-4e12-b984-f693a7bcd663';
+  const figmaCampaignPackIllustration = 'https://www.figma.com/api/mcp/asset/fe87c282-86c1-42e7-866f-30847ff73d73';
+  const figmaCampaignStarsBg = 'https://www.figma.com/api/mcp/asset/a0926ad6-be6f-4467-8433-4623ec262cd0';
+  const figmaCampaignShimmer = 'https://www.figma.com/api/mcp/asset/46ea4bda-48bd-4791-bac6-2497aaf36aed';
+  const figmaCampaignStarStroke = 'https://www.figma.com/api/mcp/asset/7b830475-09e9-470e-b053-b88415f3bb22';
+  const figmaCampaignDashedLine = 'https://www.figma.com/api/mcp/asset/53089c38-1a50-48b3-a7f6-4b9716591704';
 
   // Campaign calendar events — per-day events with time (Untitled UI style)
   interface CalendarEvent {
@@ -1233,32 +1275,64 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     dot?: boolean;
   }
 
-  const campaignCalendarEvents: CalendarEvent[] = [
-    { id: '1', title: 'Targeted Reach', date: new Date(2024, 9, 1), time: '9:00 am', color: 'blue' },
-    { id: '2', title: 'Property of the Day', date: new Date(2024, 9, 1), time: '2:00 pm', color: 'orange' },
-    { id: '3', title: 'Amber Exclusive', date: new Date(2024, 9, 3), time: '10:00 am', color: 'purple' },
-    { id: '4', title: 'UCAS Result', date: new Date(2024, 9, 3), time: '3:00 pm', color: 'grey' },
-    { id: '5', title: 'Property of the Day', date: new Date(2024, 9, 8), time: '9:00 am', color: 'orange' },
-    { id: '6', title: 'Social Media Kit', date: new Date(2024, 9, 8), time: '11:30 am', color: 'pink' },
-    { id: '7', title: 'Amber Exclusive', date: new Date(2024, 9, 8), time: '2:00 pm', color: 'purple' },
-    { id: '8', title: 'Design sync', date: new Date(2024, 9, 8), time: '4:00 pm', color: 'green' },
-    { id: '9', title: 'Social Media Kit', date: new Date(2024, 9, 14), time: '10:00 am', color: 'blue' },
-    { id: '10', title: 'Amber Exclusive', date: new Date(2024, 9, 15), time: '2:30 pm', color: 'purple' },
-    { id: '11', title: 'Property of the Day', date: new Date(2024, 9, 21), time: '9:00 am', color: 'orange' },
-    { id: '12', title: 'Deep work', date: new Date(2024, 9, 22), time: '2:30 pm', color: 'blue' },
-    { id: '13', title: 'One-on-one w/...', date: new Date(2024, 9, 22), time: '3:30 pm', color: 'pink' },
-    { id: '14', title: 'Campaign review', date: new Date(2024, 9, 22), time: '4:00 pm', color: 'green' },
-    { id: '15', title: 'Lunch with Oli...', date: new Date(2024, 9, 23), time: '5:30 pm', color: 'green', dot: true },
-    { id: '16', title: 'Friday standup', date: new Date(2024, 9, 24), time: '2:30 pm', color: 'grey' },
-    { id: '17', title: 'Olivia x Riley', date: new Date(2024, 9, 24), time: '3:30 pm', color: 'pink' },
-    { id: '18', title: 'Product demo', date: new Date(2024, 9, 24), time: '7:00 pm', color: 'purple' },
-    { id: '19', title: 'House inspec...', date: new Date(2024, 9, 25), time: '4:30 pm', color: 'yellow' },
-    { id: '20', title: "Ava's engag...", date: new Date(2024, 9, 26), time: '6:30 pm', color: 'pink', dot: true },
-    { id: '21', title: 'Monday stan...', date: new Date(2024, 9, 27), time: '2:30 pm', color: 'grey' },
-    { id: '22', title: 'Content plan...', date: new Date(2024, 9, 27), time: '4:30 pm', color: 'green' },
-    { id: '23', title: 'Product demo', date: new Date(2024, 9, 28), time: '4:00 pm', color: 'purple' },
-    { id: '24', title: 'Catch up w/...', date: new Date(2024, 9, 28), time: '8:00 pm', color: 'orange' },
-  ];
+  const campaignCalendarEvents: CalendarEvent[] = useMemo(() => {
+    const y = campaignCalendarYear;
+    const m = campaignCalendarMonth;
+    const dim = new Date(y, m + 1, 0).getDate();
+    const d = (day: number, title: string, time: string, color: CalendarEvent['color'], id: string, dot?: boolean): CalendarEvent | null => {
+      if (day < 1 || day > dim) return null;
+      return { id, title, date: new Date(y, m, day), time, color, dot };
+    };
+    return [
+      d(1, 'Targeted Reach', '9:00 AM', 'blue', 'ca1'),
+      d(1, 'Property of the Day', '2:00 PM', 'orange', 'ca2'),
+      d(2, 'Marketing site design', '11:00 AM', 'blue', 'ca3'),
+      d(2, 'UCAS push', '3:30 PM', 'purple', 'ca4'),
+      d(3, 'Amber Exclusive', '10:00 AM', 'purple', 'ca5'),
+      d(3, 'Student webinar', '4:00 PM', 'green', 'ca6'),
+      d(4, 'Friday standup', '9:00 AM', 'grey', 'ca7'),
+      d(4, 'Accountant', '1:45 PM', 'orange', 'ca8'),
+      d(5, 'Social burst', '10:30 AM', 'pink', 'ca9'),
+      d(6, 'TikTok kit', '9:15 AM', 'pink', 'ca10'),
+      d(6, 'WhatsApp blast', '2:00 PM', 'green', 'ca11'),
+      d(7, 'Brand refresh', '11:45 AM', 'indigo', 'ca12'),
+      d(8, 'Property of the Day', '9:00 AM', 'orange', 'ca13'),
+      d(8, 'Social Media Kit', '11:30 AM', 'pink', 'ca14'),
+      d(8, 'Amber Exclusive', '2:00 PM', 'purple', 'ca15'),
+      d(8, 'Design sync', '4:00 PM', 'green', 'ca16'),
+      d(9, 'Morning sync', '8:30 AM', 'grey', 'ca17'),
+      d(9, 'Marketing site design', '2:30 PM', 'blue', 'ca18'),
+      d(10, 'Accountant', '1:45 PM', 'orange', 'ca19'),
+      d(11, 'Launch review', '10:00 AM', 'yellow', 'ca20'),
+      d(12, 'Student Choice push', '9:00 AM', 'brand', 'ca21'),
+      d(13, 'Weekly report', '3:00 PM', 'grey', 'ca22'),
+      d(14, 'Social Media Kit', '10:00 AM', 'blue', 'ca23'),
+      d(14, 'Creative QA', '2:15 PM', 'pink', 'ca24'),
+      d(15, 'Amber Exclusive', '2:30 PM', 'purple', 'ca25'),
+      d(15, 'Partner call', '5:00 PM', 'green', 'ca26'),
+      d(16, 'Property spotlight', '9:30 AM', 'orange', 'ca27'),
+      d(17, 'Email drip', '11:00 AM', 'indigo', 'ca28'),
+      d(18, 'Budget review', '1:00 PM', 'yellow', 'ca29'),
+      d(19, 'Influencer slot', '10:45 AM', 'pink', 'ca30'),
+      d(20, 'Multi-city push', '9:00 AM', 'blue', 'ca31'),
+      d(21, 'Property of the Day', '9:00 AM', 'orange', 'ca32'),
+      d(21, 'Retention call', '4:30 PM', 'purple', 'ca33'),
+      d(22, 'Deep work', '2:30 PM', 'blue', 'ca34'),
+      d(22, 'One-on-one', '3:30 PM', 'pink', 'ca35'),
+      d(22, 'Campaign review', '4:00 PM', 'green', 'ca36'),
+      d(23, 'Lunch briefing', '12:30 PM', 'green', 'ca37', true),
+      d(24, 'Friday standup', '9:00 AM', 'grey', 'ca38'),
+      d(24, 'Product demo', '7:00 PM', 'purple', 'ca39'),
+      d(25, 'House inspection slot', '4:30 PM', 'yellow', 'ca40'),
+      d(26, 'Engagement push', '6:30 PM', 'pink', 'ca41', true),
+      d(27, 'Monday standup', '9:30 AM', 'grey', 'ca42'),
+      d(27, 'Content plan', '4:30 PM', 'green', 'ca43'),
+      d(28, 'Re-targeting', '11:15 AM', 'blue', 'ca44'),
+      d(29, 'Weekend flash', '8:00 AM', 'orange', 'ca45'),
+      d(30, 'Close month', '3:00 PM', 'purple', 'ca46'),
+      d(31, 'Wrap party slot', '5:00 PM', 'pink', 'ca47'),
+    ].filter((e): e is CalendarEvent => e !== null);
+  }, [campaignCalendarYear, campaignCalendarMonth]);
 
   // Multi-day campaigns (spanning bars)
   interface CalendarCampaign {
@@ -1342,14 +1416,6 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     return rows;
   };
 
-  // Campaign type list for sidebar
-  const campaignTypes = [
-    { name: 'Property of the day', duration: '3 Days', icon: '✅', iconColor: '#22c55e' },
-    { name: "Student's Choice", duration: '30 Days', icon: '✅', iconColor: '#22c55e' },
-    { name: 'Tik Tok Video', duration: '1 Day', icon: '🎵', iconColor: '#000' },
-    { name: 'WhatsApp Campaign', duration: '1 Day', icon: '💬', iconColor: '#25d366' },
-  ];
-
   // Calendar helper functions
   const calendarMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const calendarMonthShort = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -1400,574 +1466,187 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     setCampaignCalendarYear(newYear);
   };
 
-  const getWeekNumber = (date: Date) => {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-  };
-
-  // Navigate based on view mode
   const navigateCalendar = (direction: number) => {
-    if (calendarViewMode === 'month') {
-      navigateCalendarMonth(direction);
-    } else if (calendarViewMode === 'week') {
-      const newDate = new Date(calendarSelectedDate);
-      newDate.setDate(newDate.getDate() + direction * 7);
-      setCalendarSelectedDate(newDate);
-      setCampaignCalendarMonth(newDate.getMonth());
-      setCampaignCalendarYear(newDate.getFullYear());
-    } else {
-      const newDate = new Date(calendarSelectedDate);
-      newDate.setDate(newDate.getDate() + direction);
-      setCalendarSelectedDate(newDate);
-      setCampaignCalendarMonth(newDate.getMonth());
-      setCampaignCalendarYear(newDate.getFullYear());
-    }
+    navigateCalendarMonth(direction);
   };
 
   const goToToday = () => {
     const today = new Date();
     setCampaignCalendarMonth(today.getMonth());
     setCampaignCalendarYear(today.getFullYear());
-    setCalendarSelectedDate(today);
   };
 
-  // Get the week (Mon-Sun) containing the selected date
-  const getWeekDays = (date: Date) => {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = day === 0 ? -6 : 1 - day; // Monday start
-    const monday = new Date(d);
-    monday.setDate(d.getDate() + diff);
-    const days: Date[] = [];
-    for (let i = 0; i < 7; i++) {
-      const dd = new Date(monday);
-      dd.setDate(monday.getDate() + i);
-      days.push(dd);
-    }
-    return days;
+  /** Demo status chip per day — deterministic “random” like Figma variety */
+  const campaignDayStatusLabels = ['Live', 'Scheduled', 'Paused', 'Draft', 'Ending soon'] as const;
+  const getCampaignDayStatus = (
+    date: Date,
+    isCurrentMonth: boolean
+  ): (typeof campaignDayStatusLabels)[number] | null => {
+    if (!isCurrentMonth) return null;
+    const n = date.getFullYear() * 367 + date.getMonth() * 31 + date.getDate();
+    if (n % 5 === 0) return null;
+    return campaignDayStatusLabels[n % campaignDayStatusLabels.length];
   };
-
-  // Parse time string to hour number for positioning in week/day views
-  const parseTimeToHour = (time: string): number => {
-    const match = time.match(/(\d+):(\d+)\s*(am|pm)/i);
-    if (!match) return 12;
-    let h = parseInt(match[1]);
-    const m = parseInt(match[2]);
-    const period = match[3].toLowerCase();
-    if (period === 'pm' && h !== 12) h += 12;
-    if (period === 'am' && h === 12) h = 0;
-    return h + m / 60;
-  };
-
-  // Hours array for week/day time grid
-  const calendarHours = Array.from({ length: 14 }, (_, i) => i + 7); // 7am to 8pm
-
-  // Get header subtitle based on view
-  const getCalendarSubtitle = () => {
-    if (calendarViewMode === 'month') {
-      return `1 ${calendarMonthNames[campaignCalendarMonth].slice(0, 3)} ${campaignCalendarYear} – ${new Date(campaignCalendarYear, campaignCalendarMonth + 1, 0).getDate()} ${calendarMonthNames[campaignCalendarMonth].slice(0, 3)} ${campaignCalendarYear}`;
-    } else if (calendarViewMode === 'week') {
-      const weekDays = getWeekDays(calendarSelectedDate);
-      const start = weekDays[0];
-      const end = weekDays[6];
-      return `${start.getDate()} ${calendarMonthNames[start.getMonth()].slice(0, 3)} ${start.getFullYear()} – ${end.getDate()} ${calendarMonthNames[end.getMonth()].slice(0, 3)} ${end.getFullYear()}`;
-    } else {
-      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      return dayNames[calendarSelectedDate.getDay()];
+  const campaignDayStatusClass = (label: (typeof campaignDayStatusLabels)[number]) => {
+    switch (label) {
+      case 'Live':
+        return 'bg-chart-2/20 text-chart-2';
+      case 'Scheduled':
+        return 'bg-primary/15 text-primary';
+      case 'Paused':
+        return 'bg-chart-5/25 text-chart-5';
+      case 'Draft':
+        return 'bg-muted text-muted-foreground';
+      case 'Ending soon':
+        return 'bg-destructive/15 text-destructive';
+      default:
+        return 'bg-muted text-muted-foreground';
     }
   };
 
-  const formatHour = (h: number) => {
-    if (h === 0) return '12 am';
-    if (h < 12) return `${h} am`;
-    if (h === 12) return '12 pm';
-    return `${h - 12} pm`;
-  };
-
-  // Event color tokens via CSS variables (themeable light/dark)
+  // Event color tokens — direct rgba values matching Figma exactly
   const getEventColorStyles = (color: string) => {
-    const c = ['blue','orange','pink','green','purple','brand','yellow','indigo','grey'].includes(color) ? color : 'blue';
-    return {
-      bg: `var(--event-${c}-bg)`,
-      border: `var(--event-${c}-border)`,
-      text: `var(--event-${c}-text)`,
-      time: `var(--event-${c}-time)`,
-    };
+    switch (color) {
+      case 'grey':
+        return { bg: 'var(--muted)', border: 'rgba(23,23,23,0.2)', text: 'var(--foreground)', time: 'rgba(23,23,23,0.6)' };
+      case 'orange':
+        return { bg: 'rgba(227,146,25,0.1)', border: 'rgba(217,119,6,0.4)', text: '#d97706', time: '#d97706' };
+      case 'blue':
+        return { bg: 'rgba(2,132,199,0.1)', border: 'rgba(2,132,199,0.4)', text: '#0284c7', time: '#0284c7' };
+      case 'green':
+        return { bg: 'rgba(22,163,74,0.1)', border: 'rgba(22,163,74,0.4)', text: '#16a34a', time: '#16a34a' };
+      case 'pink':
+        return { bg: 'rgba(224,52,52,0.1)', border: 'rgba(224,52,52,0.4)', text: '#dc2626', time: '#dc2626' };
+      case 'purple':
+        return { bg: 'rgba(147,51,234,0.1)', border: 'rgba(147,51,234,0.4)', text: '#9333ea', time: '#9333ea' };
+      case 'indigo':
+        return { bg: 'rgba(79,70,229,0.1)', border: 'rgba(79,70,229,0.4)', text: '#4f46e5', time: '#4f46e5' };
+      case 'brand':
+        return { bg: 'rgba(12,99,248,0.1)', border: 'rgba(12,99,248,0.4)', text: '#0c63f8', time: '#0c63f8' };
+      case 'yellow':
+        return { bg: 'rgba(202,138,4,0.1)', border: 'rgba(202,138,4,0.4)', text: '#ca8a04', time: '#ca8a04' };
+      default:
+        return { bg: 'rgba(2,132,199,0.1)', border: 'rgba(2,132,199,0.4)', text: '#0284c7', time: '#0284c7' };
+    }
   };
   
-  // Commissions data
-  const commissionsData = [
-    {
-      poNumber: '378',
-      bookingType: 'Advance',
-      date: '04 Nov 25',
-      status: 'Partially_paid',
-      amount: 'USD 50.0',
-      amountDue: 'USD 12.5'
-    },
-    {
-      poNumber: '377',
-      bookingType: 'Booking',
-      date: '04 Nov 25',
-      status: 'Partially_paid',
-      amount: 'USD 94.0',
-      amountDue: 'USD 4.0'
-    },
-    {
-      poNumber: '376',
-      bookingType: 'Advance',
-      date: '03 Nov 25',
-      status: 'Paid',
-      amount: 'USD 75.0',
-      amountDue: 'USD 0.0'
-    },
-    {
-      poNumber: '375',
-      bookingType: 'Booking',
-      date: '02 Nov 25',
-      status: 'Partially_paid',
-      amount: 'USD 120.0',
-      amountDue: 'USD 30.0'
-    },
-    {
-      poNumber: '374',
-      bookingType: 'Advance',
-      date: '01 Nov 25',
-      status: 'Unpaid',
-      amount: 'USD 45.0',
-      amountDue: 'USD 45.0'
-    },
-    {
-      poNumber: '373',
-      bookingType: 'Booking',
-      date: '31 Oct 25',
-      status: 'Paid',
-      amount: 'USD 88.0',
-      amountDue: 'USD 0.0'
-    },
-    {
-      poNumber: '372',
-      bookingType: 'Advance',
-      date: '30 Oct 25',
-      status: 'Partially_paid',
-      amount: 'USD 60.0',
-      amountDue: 'USD 15.0'
-    },
-    {
-      poNumber: '371',
-      bookingType: 'Booking',
-      date: '29 Oct 25',
-      status: 'Unpaid',
-      amount: 'USD 110.0',
-      amountDue: 'USD 110.0'
-    },
-    {
-      poNumber: '370',
-      bookingType: 'Advance',
-      date: '28 Oct 25',
-      status: 'Paid',
-      amount: 'USD 55.0',
-      amountDue: 'USD 0.0'
-    },
-    {
-      poNumber: '369',
-      bookingType: 'Booking',
-      date: '27 Oct 25',
-      status: 'Partially_paid',
-      amount: 'USD 95.0',
-      amountDue: 'USD 20.0'
-    },
-    {
-      poNumber: '368',
-      bookingType: 'Advance',
-      date: '26 Oct 25',
-      status: 'Unpaid',
-      amount: 'USD 40.0',
-      amountDue: 'USD 40.0'
-    },
-    {
-      poNumber: '367',
-      bookingType: 'Booking',
-      date: '25 Oct 25',
-      status: 'Paid',
-      amount: 'USD 130.0',
-      amountDue: 'USD 0.0'
-    },
-    {
-      poNumber: '366',
-      bookingType: 'Advance',
-      date: '24 Oct 25',
-      status: 'Partially_paid',
-      amount: 'USD 70.0',
-      amountDue: 'USD 10.0'
-    },
-    {
-      poNumber: '365',
-      bookingType: 'Booking',
-      date: '23 Oct 25',
-      status: 'Unpaid',
-      amount: 'USD 100.0',
-      amountDue: 'USD 100.0'
-    },
-    {
-      poNumber: '364',
-      bookingType: 'Advance',
-      date: '22 Oct 25',
-      status: 'Paid',
-      amount: 'USD 65.0',
-      amountDue: 'USD 0.0'
-    },
-    {
-      poNumber: '363',
-      bookingType: 'Booking',
-      date: '21 Oct 25',
-      status: 'Partially_paid',
-      amount: 'USD 85.0',
-      amountDue: 'USD 25.0'
-    },
-    {
-      poNumber: '362',
-      bookingType: 'Advance',
-      date: '20 Oct 25',
-      status: 'Unpaid',
-      amount: 'USD 50.0',
-      amountDue: 'USD 50.0'
-    },
-    {
-      poNumber: '361',
-      bookingType: 'Booking',
-      date: '19 Oct 25',
-      status: 'Paid',
-      amount: 'USD 105.0',
-      amountDue: 'USD 0.0'
-    },
-    {
-      poNumber: '360',
-      bookingType: 'Advance',
-      date: '18 Oct 25',
-      status: 'Partially_paid',
-      amount: 'USD 80.0',
-      amountDue: 'USD 18.0'
-    },
-    {
-      poNumber: '359',
-      bookingType: 'Booking',
-      date: '17 Oct 25',
-      status: 'Unpaid',
-      amount: 'USD 90.0',
-      amountDue: 'USD 90.0'
+  // Invoices (demo) — 123 rows, 25/page to match Figma; age buckets match Invoice Age cards
+  const invoicesItemsPerPage = 25;
+  const invoicesData = React.useMemo(() => {
+    const buckets = ['current', '1-15', '16-30', '31-45', 'gt45'] as const;
+    const baseNums = [379, 570, 380, 381, 382, 383, 384, 385];
+    return Array.from({ length: 123 }, (_, i) => {
+      const num = baseNums[i % baseNums.length] + Math.floor(i / baseNums.length);
+      const overdue = i % 4 === 0;
+      return {
+        invoiceNumber: String(num),
+        invoiceDate: '03/04/2025',
+        total: '$75.00',
+        balance: overdue ? '$75.00' : '$0.00',
+        dueDate: '04/03/2025',
+        status: overdue ? 'Overdue' : 'Paid',
+        ageBucket: buckets[i % buckets.length],
+      };
+    });
+  }, []);
+
+  const filteredInvoicesData = invoicesData.filter((row: any) => {
+    if (invoiceSearchQuery) {
+      const q = invoiceSearchQuery.toLowerCase();
+      if (!String(row.invoiceNumber).toLowerCase().includes(q)) return false;
     }
-  ] as any[];
-  
-  // Sub-Partners data (same structure as commissions)
-  const subPartnersData = [
-    {
-      poNumber: '378',
-      bookingType: 'Advance',
-      date: '04 Nov 25',
-      status: 'Partially_paid',
-      amount: 'USD 50.0',
-      amountDue: 'USD 12.5'
-    },
-    {
-      poNumber: '377',
-      bookingType: 'Booking',
-      date: '04 Nov 25',
-      status: 'Partially_paid',
-      amount: 'USD 94.0',
-      amountDue: 'USD 4.0'
-    },
-    {
-      poNumber: '376',
-      bookingType: 'Advance',
-      date: '03 Nov 25',
-      status: 'Paid',
-      amount: 'USD 75.0',
-      amountDue: 'USD 0.0'
-    },
-    {
-      poNumber: '375',
-      bookingType: 'Booking',
-      date: '02 Nov 25',
-      status: 'Partially_paid',
-      amount: 'USD 120.0',
-      amountDue: 'USD 30.0'
-    },
-    {
-      poNumber: '374',
-      bookingType: 'Advance',
-      date: '01 Nov 25',
-      status: 'Unpaid',
-      amount: 'USD 45.0',
-      amountDue: 'USD 45.0'
-    },
-    {
-      poNumber: '373',
-      bookingType: 'Booking',
-      date: '31 Oct 25',
-      status: 'Paid',
-      amount: 'USD 88.0',
-      amountDue: 'USD 0.0'
-    },
-    {
-      poNumber: '372',
-      bookingType: 'Advance',
-      date: '30 Oct 25',
-      status: 'Partially_paid',
-      amount: 'USD 60.0',
-      amountDue: 'USD 15.0'
-    },
-    {
-      poNumber: '371',
-      bookingType: 'Booking',
-      date: '29 Oct 25',
-      status: 'Unpaid',
-      amount: 'USD 110.0',
-      amountDue: 'USD 110.0'
-    },
-    {
-      poNumber: '370',
-      bookingType: 'Advance',
-      date: '28 Oct 25',
-      status: 'Paid',
-      amount: 'USD 55.0',
-      amountDue: 'USD 0.0'
-    },
-    {
-      poNumber: '369',
-      bookingType: 'Booking',
-      date: '27 Oct 25',
-      status: 'Partially_paid',
-      amount: 'USD 95.0',
-      amountDue: 'USD 20.0'
-    },
-    {
-      poNumber: '368',
-      bookingType: 'Advance',
-      date: '26 Oct 25',
-      status: 'Unpaid',
-      amount: 'USD 40.0',
-      amountDue: 'USD 40.0'
-    },
-    {
-      poNumber: '367',
-      bookingType: 'Booking',
-      date: '25 Oct 25',
-      status: 'Paid',
-      amount: 'USD 130.0',
-      amountDue: 'USD 0.0'
-    },
-    {
-      poNumber: '366',
-      bookingType: 'Advance',
-      date: '24 Oct 25',
-      status: 'Partially_paid',
-      amount: 'USD 70.0',
-      amountDue: 'USD 10.0'
-    },
-    {
-      poNumber: '365',
-      bookingType: 'Booking',
-      date: '23 Oct 25',
-      status: 'Unpaid',
-      amount: 'USD 100.0',
-      amountDue: 'USD 100.0'
-    },
-    {
-      poNumber: '364',
-      bookingType: 'Advance',
-      date: '22 Oct 25',
-      status: 'Paid',
-      amount: 'USD 65.0',
-      amountDue: 'USD 0.0'
-    },
-    {
-      poNumber: '363',
-      bookingType: 'Booking',
-      date: '21 Oct 25',
-      status: 'Partially_paid',
-      amount: 'USD 85.0',
-      amountDue: 'USD 25.0'
-    },
-    {
-      poNumber: '362',
-      bookingType: 'Advance',
-      date: '20 Oct 25',
-      status: 'Unpaid',
-      amount: 'USD 50.0',
-      amountDue: 'USD 50.0'
-    },
-    {
-      poNumber: '361',
-      bookingType: 'Booking',
-      date: '19 Oct 25',
-      status: 'Paid',
-      amount: 'USD 105.0',
-      amountDue: 'USD 0.0'
-    },
-    {
-      poNumber: '360',
-      bookingType: 'Advance',
-      date: '18 Oct 25',
-      status: 'Partially_paid',
-      amount: 'USD 80.0',
-      amountDue: 'USD 18.0'
-    },
-    {
-      poNumber: '359',
-      bookingType: 'Booking',
-      date: '17 Oct 25',
-      status: 'Unpaid',
-      amount: 'USD 90.0',
-      amountDue: 'USD 90.0'
-    }
-  ] as any[];
-  
-  // Filter commissions data
-  const filteredCommissionsData = commissionsData.filter(commission => {
-    if (statusFilter && commission.status !== statusFilter) return false;
-    if (bookingTypeFilter && commission.bookingType !== bookingTypeFilter) return false;
+    if (invoiceStatusFilter && row.status !== invoiceStatusFilter) return false;
+    if (invoiceAgeBucket && row.ageBucket !== invoiceAgeBucket) return false;
     return true;
   });
-  
-  // Filter Sub-Partners data
-  const filteredSubPartnersData = subPartnersData.filter(item => {
+
+  const sortedInvoicesData = React.useMemo(() => {
+    if (!invoiceSortKey) return filteredInvoicesData;
+    return [...filteredInvoicesData].sort((a: any, b: any) => {
+      let aVal = a[invoiceSortKey];
+      let bVal = b[invoiceSortKey];
+      // Parse currency strings like "$1,234.00"
+      if (typeof aVal === 'string' && aVal.startsWith('$')) {
+        aVal = parseFloat(aVal.replace(/[$,]/g, ''));
+        bVal = parseFloat(bVal.replace(/[$,]/g, ''));
+      }
+      // Parse date strings like "12/10/2024"
+      if (invoiceSortKey === 'invoiceDate' || invoiceSortKey === 'dueDate') {
+        const [aD, aM, aY] = String(aVal).split('/').map(Number);
+        const [bD, bM, bY] = String(bVal).split('/').map(Number);
+        aVal = new Date(aY, aM - 1, aD).getTime();
+        bVal = new Date(bY, bM - 1, bD).getTime();
+      }
+      if (aVal < bVal) return invoiceSortDir === 'asc' ? -1 : 1;
+      if (aVal > bVal) return invoiceSortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredInvoicesData, invoiceSortKey, invoiceSortDir]);
+
+  const toggleInvoiceSort = (key: typeof invoiceSortKey) => {
+    if (invoiceSortKey === key) {
+      setInvoiceSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setInvoiceSortKey(key);
+      setInvoiceSortDir('asc');
+    }
+    setInvoicesPage(1);
+  };
+
+  const invoicesTotalItems = sortedInvoicesData.length;
+  const invoicesTotalPages = Math.ceil(invoicesTotalItems / invoicesItemsPerPage) || 1;
+  const invoicesStartIndex = (invoicesPage - 1) * invoicesItemsPerPage;
+  const invoicesEndIndex = invoicesStartIndex + invoicesItemsPerPage;
+  const currentInvoicesData = sortedInvoicesData.slice(invoicesStartIndex, invoicesEndIndex);
+  const invoicesStartItem = invoicesTotalItems === 0 ? 0 : invoicesStartIndex + 1;
+  const invoicesEndItem = Math.min(invoicesEndIndex, invoicesTotalItems);
+
+  const handleInvoicesPrevious = () => {
+    if (invoicesPage > 1) setInvoicesPage(invoicesPage - 1);
+  };
+
+  const handleInvoicesNext = () => {
+    if (invoicesPage < invoicesTotalPages) setInvoicesPage(invoicesPage + 1);
+  };
+
+  const handleInvoicesPageClick = (page: number) => {
+    if (page !== -1) setInvoicesPage(page);
+  };
+
+  const getInvoicesPageNumbers = () => {
+    const pages: number[] = [];
+    const maxVisible = 4;
+    if (invoicesTotalPages <= maxVisible) {
+      for (let i = 1; i <= invoicesTotalPages; i++) pages.push(i);
+    } else {
+      if (invoicesPage <= 2) {
+        for (let i = 1; i <= 3; i++) pages.push(i);
+        pages.push(-1);
+        pages.push(invoicesTotalPages);
+      } else if (invoicesPage >= invoicesTotalPages - 1) {
+        pages.push(1);
+        pages.push(-1);
+        for (let i = invoicesTotalPages - 2; i <= invoicesTotalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push(-1);
+        pages.push(invoicesPage - 1);
+        pages.push(invoicesPage);
+        pages.push(invoicesPage + 1);
+        pages.push(-1);
+        pages.push(invoicesTotalPages);
+      }
+    }
+    return pages;
+  };
+
+  const subPartnersData = [] as any[];
+  const filteredSubPartnersData = subPartnersData.filter((item: any) => {
     if (subPartnersStatusFilter && item.status !== subPartnersStatusFilter) return false;
     if (subPartnersBookingTypeFilter && item.bookingType !== subPartnersBookingTypeFilter) return false;
     return true;
   });
-  
-  // Filter leads data based on search query
-  const filteredLeadsData = leadsData.filter((lead: any) => {
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        lead.name.toLowerCase().includes(query) ||
-        lead.email.toLowerCase().includes(query) ||
-        lead.city.toLowerCase().includes(query) ||
-        lead.partner.toLowerCase().includes(query) ||
-        lead.status.toLowerCase().includes(query)
-      );
-    }
-    return true;
-  });
-  
-  // Pagination logic
-  const totalItems = filteredLeadsData.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentLeadsData = filteredLeadsData.slice(startIndex, endIndex);
-  const startItem = startIndex + 1;
-  const endItem = Math.min(endIndex, totalItems);
 
-  const handlePrevious = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePageClick = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  // Generate page numbers to display
-  const getPageNumbers = () => {
-    const pages: number[] = [];
-    const maxVisible = 4;
-    
-    if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (currentPage <= 2) {
-        for (let i = 1; i <= maxVisible; i++) {
-          pages.push(i);
-        }
-      } else if (currentPage >= totalPages - 1) {
-        for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) {
-          pages.push(i);
-        }
-      } else {
-        for (let i = currentPage - 1; i <= currentPage + 2; i++) {
-          pages.push(i);
-        }
-      }
-    }
-    return pages;
-  };
-  
-  // Commissions pagination logic
-  const commissionsTotalItems = filteredCommissionsData.length;
-  const commissionsTotalPages = Math.ceil(commissionsTotalItems / itemsPerPage);
-  const commissionsStartIndex = (commissionsPage - 1) * itemsPerPage;
-  const commissionsEndIndex = commissionsStartIndex + itemsPerPage;
-  const currentCommissionsData = filteredCommissionsData.slice(commissionsStartIndex, commissionsEndIndex);
-  const commissionsStartItem = commissionsStartIndex + 1;
-  const commissionsEndItem = Math.min(commissionsEndIndex, commissionsTotalItems);
-
-  const handleCommissionsPrevious = () => {
-    if (commissionsPage > 1) {
-      setCommissionsPage(commissionsPage - 1);
-    }
-  };
-
-  const handleCommissionsNext = () => {
-    if (commissionsPage < commissionsTotalPages) {
-      setCommissionsPage(commissionsPage + 1);
-    }
-  };
-
-  const handleCommissionsPageClick = (page: number) => {
-    if (page !== -1) {
-      setCommissionsPage(page);
-    }
-  };
-
-  const getCommissionsPageNumbers = () => {
-    const pages: number[] = [];
-    const maxVisible = 4;
-    
-    if (commissionsTotalPages <= maxVisible) {
-      for (let i = 1; i <= commissionsTotalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (commissionsPage <= 2) {
-        for (let i = 1; i <= 3; i++) {
-          pages.push(i);
-        }
-        pages.push(-1);
-        pages.push(commissionsTotalPages);
-      } else if (commissionsPage >= commissionsTotalPages - 1) {
-        pages.push(1);
-        pages.push(-1);
-        for (let i = commissionsTotalPages - 2; i <= commissionsTotalPages; i++) {
-          pages.push(i);
-        }
-      } else {
-        pages.push(1);
-        pages.push(-1);
-        pages.push(commissionsPage - 1);
-        pages.push(commissionsPage);
-        pages.push(commissionsPage + 1);
-        pages.push(-1);
-        pages.push(commissionsTotalPages);
-      }
-    }
-    return pages;
-  };
-  
   // Sub-Partners pagination logic
   const subPartnersTotalItems = filteredSubPartnersData.length;
   const subPartnersTotalPages = Math.ceil(subPartnersTotalItems / itemsPerPage);
@@ -2033,43 +1712,21 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
 
   // Filter Listings data
   const filteredListingsData = listingsData.filter((item: any) => {
-    if (listingsSearchQuery && !item.invoiceNumber.toLowerCase().includes(listingsSearchQuery.toLowerCase())) return false;
-    if (listingsProviderFilter && item.status !== listingsProviderFilter) return false;
+    const q = listingsSearchQuery.trim().toLowerCase();
+    if (q && !item.title.toLowerCase().includes(q) && !item.address.toLowerCase().includes(q)) return false;
+    if (listingsCityFilter && item.city !== listingsCityFilter) return false;
+    if (listingsStatusFilter && item.listingStatus !== listingsStatusFilter) return false;
     return true;
   });
 
-  // Sort listings data
-  const sortedListingsData = [...filteredListingsData].sort((a: any, b: any) => {
-    if (!listingsSortField) return 0;
-    let valA = a[listingsSortField];
-    let valB = b[listingsSortField];
-    if (listingsSortField === 'totalAmount' || listingsSortField === 'balance') {
-      valA = parseFloat(valA.replace(/[^0-9.]/g, ''));
-      valB = parseFloat(valB.replace(/[^0-9.]/g, ''));
-    }
-    if (valA < valB) return listingsSortDir === 'asc' ? -1 : 1;
-    if (valA > valB) return listingsSortDir === 'asc' ? 1 : -1;
-    return 0;
-  });
-
-  const handleListingsSort = (field: string) => {
-    if (listingsSortField === field) {
-      setListingsSortDir(listingsSortDir === 'asc' ? 'desc' : 'asc');
-    } else {
-      setListingsSortField(field);
-      setListingsSortDir('asc');
-    }
-    setListingsPage(1);
-  };
+  const sortedListingsData = filteredListingsData;
 
   // Listings pagination logic
   const listingsTotalItems = sortedListingsData.length;
-  const listingsTotalPages = Math.ceil(listingsTotalItems / itemsPerPage);
-  const listingsStartIndex = (listingsPage - 1) * itemsPerPage;
-  const listingsEndIndex = listingsStartIndex + itemsPerPage;
+  const listingsTotalPages = Math.max(1, Math.ceil(listingsTotalItems / listingsItemsPerPage));
+  const listingsStartIndex = (listingsPage - 1) * listingsItemsPerPage;
+  const listingsEndIndex = listingsStartIndex + listingsItemsPerPage;
   const currentListingsData = sortedListingsData.slice(listingsStartIndex, listingsEndIndex);
-  const listingsStartItem = listingsStartIndex + 1;
-  const listingsEndItem = Math.min(listingsEndIndex, listingsTotalItems);
 
   const handleListingsPrevious = () => {
     if (listingsPage > 1) setListingsPage(listingsPage - 1);
@@ -2106,7 +1763,8 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     }
     return pages;
   };
-  const listingsProviders = Array.from(new Set(listingsData.map((d: any) => d.status)));
+  const listingsCityOptions = Array.from(new Set(listingsData.map((d: any) => d.city))).sort();
+  const listingsStatusOptions = Array.from(new Set(listingsData.map((d: any) => d.listingStatus))).sort();
 
   // Reviews pagination logic
   const reviewsTotalItems = reviewsData.length;
@@ -2197,9 +1855,11 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     display: 'flex',
     width: '100%',
     height: '100vh',
+    maxHeight: '100vh',
     backgroundColor: colors.bg,
     overflow: 'hidden',
-    position: 'relative'
+    position: 'relative',
+    minHeight: 0
   }}>
       {/* Sidebar */}
       <motion.aside
@@ -2212,7 +1872,8 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
         display: 'flex',
         flexDirection: 'column',
         flexShrink: 0,
-        overflow: 'hidden'
+        overflow: 'hidden',
+        willChange: 'width'
       }}>
         <header style={{
         height: '56px',
@@ -2225,35 +1886,48 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
       }}>
           <AnimatePresence>
             {!isCollapsed && (
-              <motion.img
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                src="/assets/AmberConnect.png"
-                alt="Amber Connect Logo"
-                style={{ width: '150px', height: 'auto' }}
-              />
+                style={{ display: 'flex', alignItems: 'center', gap: '0px', userSelect: 'none' }}
+              >
+                <span style={{ fontSize: '18px', fontWeight: 700, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', letterSpacing: '-0.02em' }}>amber </span>
+                <span style={{ fontSize: '18px', fontWeight: 400, color: '#3F83F8', fontFamily: '"Geist", sans-serif', letterSpacing: '-0.02em' }}>c</span>
+                <span style={{ fontSize: '18px', fontWeight: 400, color: '#3F83F8', fontFamily: '"Geist", sans-serif', letterSpacing: '-0.02em', position: 'relative' }}>
+                  <svg width="11" height="11" viewBox="0 0 11 11" style={{ display: 'inline-block', verticalAlign: 'middle', marginBottom: '1px' }}>
+                    <circle cx="5.5" cy="5.5" r="4" fill="none" stroke="#3F83F8" strokeWidth="1.8" />
+                    <circle cx="5.5" cy="5.5" r="1.2" fill="#3F83F8" />
+                  </svg>
+                </span>
+                <span style={{ fontSize: '18px', fontWeight: 400, color: '#3F83F8', fontFamily: '"Geist", sans-serif', letterSpacing: '-0.02em' }}>nnect</span>
+              </motion.div>
             )}
           </AnimatePresence>
-          <button style={{
-          background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-          border: `1px solid ${colors.border}`,
-          borderRadius: '8px',
-          padding: '6px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center'
-        }} onClick={() => setIsCollapsed(!isCollapsed)}>
-            <motion.svg
-              animate={{ rotate: isCollapsed ? 180 : 0 }}
-              transition={{ duration: 0.3 }}
-              width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke={isDarkMode ? 'rgba(250, 250, 250, 1)' : 'rgba(10, 10, 10, 1)'}
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          <button
+            type="button"
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            style={{
+              background: isDarkMode ? 'rgba(10, 10, 10, 1)' : colors.white,
+              border: `1px solid ${colors.border}`,
+              borderRadius: '8px',
+              padding: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0px 1px 2px 0px rgba(0, 0, 0, 0.05)'
+            }}
+            onClick={() => setIsCollapsed(!isCollapsed)}
+          >
+            <motion.span
+              animate={{ scaleX: isCollapsed ? -1 : 1 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              style={{ display: 'inline-flex', transformOrigin: '50% 50%' }}
             >
-              <path d="M15 18l-6-6 6-6" />
-            </motion.svg>
+              <PanelLeft size={16} color={isDarkMode ? 'rgba(250, 250, 250, 1)' : 'rgba(10, 10, 10, 1)'} strokeWidth={2} />
+            </motion.span>
           </button>
         </header>
 
@@ -2295,8 +1969,14 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
             textAlign: 'left'
               }}
               animate={{
-                backgroundColor: activeNavigation === item.name ? isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white' : 'transparent',
-                boxShadow: activeNavigation === item.name ? '0px 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
+                backgroundColor: activeNavigation === item.name
+                  ? (isDarkMode ? 'rgba(10, 10, 10, 1)' : colors.white)
+                  : 'transparent',
+                boxShadow: activeNavigation === item.name
+                  ? (isDarkMode
+                    ? '0px 1px 3px rgba(0, 0, 0, 0.35), 0px 1px 2px -1px rgba(0, 0, 0, 0.25)'
+                    : '0px 1px 3px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1)')
+                  : 'none',
                 borderWidth: activeNavigation === item.name ? '1px' : '0px'
               }}
               transition={{
@@ -2304,24 +1984,17 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 ease: [0.4, 0, 0.2, 1]
               }}
             >
-                <motion.img
-                  src={item.icon}
-                  style={{
-                    width: '16px',
-                    height: '16px',
-                    objectFit: 'contain',
-                    flexShrink: 0
-                  }}
-                  alt={item.name}
-                  animate={{
-                    opacity: activeNavigation === item.name ? 1 : (isDarkMode ? 0.85 : 0.6),
-                    filter: getIconFilter(activeNavigation === item.name)
-                  }}
-                  transition={{
-                    duration: 0.2,
-                    ease: [0.4, 0, 0.2, 1]
-                  }}
-                />
+                <span style={{
+                  display: 'flex',
+                  flexShrink: 0,
+                  width: '16px',
+                  height: '16px',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: activeNavigation === item.name ? 1 : (isDarkMode ? 0.85 : 0.65)
+                }}>
+                  {renderSidebarNavIcon(item.iconKey, activeNavigation === item.name)}
+                </span>
                 {!isCollapsed && (
                 <motion.span
                   initial={{ opacity: 0 }}
@@ -2331,7 +2004,9 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               fontWeight: 500,
               fontFamily: '"Geist", sans-serif',
               whiteSpace: 'nowrap',
-              color: activeNavigation === item.name ? isDarkMode ? colors.white : 'rgba(10, 10, 10, 1)' : colors.textMuted
+              color: activeNavigation === item.name
+                    ? (isDarkMode ? colors.white : colors.accentBlue)
+                    : colors.textMuted
                   }}
                 >
                   {item.name}
@@ -2342,10 +2017,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
 
         </div>
 
-        <footer style={{
-        padding: '8px',
-        flexShrink: 0
-      }}>
+        <footer style={{ flexShrink: 0 }}>
           {!isCollapsed && (<>
           {/* Theme Toggle */}
           <div style={{ padding: '8px' }}>
@@ -2391,7 +2063,6 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               <motion.button
                 onClick={() => {
                   playClickSound();
-                  setIsScrambling(true);
                   setIsDarkMode(false);
                 }}
                 whileTap={{ scale: 0.9 }}
@@ -2460,7 +2131,6 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               <motion.button
                 onClick={() => {
                   playClickSound();
-                  setIsScrambling(true);
                   setIsDarkMode(true);
                 }}
                 whileTap={{ scale: 0.9 }}
@@ -2510,72 +2180,70 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
             </div>
           </div>
 
-          {/* Separator */}
-          <div style={{
-            height: '1px',
-            background: colors.border,
-            margin: '4px 8px'
-          }} />
           </>)}
 
-          {/* User Info */}
+          {/* User Info — Figma sidebar footer: exactly 68px */}
           <div
             onClick={() => setShowProfileMenu(prev => !prev)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowProfileMenu(prev => !prev); } }}
             style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: isCollapsed ? 'center' : 'flex-start',
-            gap: '8px',
-            padding: '8px',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            backgroundColor: showProfileMenu
-              ? (isDarkMode ? 'rgba(39, 39, 42, 1)' : 'rgba(244, 244, 245, 1)')
-              : 'transparent',
-            transition: 'background-color 0.15s ease'
-          }}>
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: isCollapsed ? 'center' : 'flex-start',
+              gap: '8px',
+              padding: '16px',
+              height: '68px',
+              boxSizing: 'border-box',
+              borderTop: `1px solid ${colors.border}`,
+              cursor: 'pointer',
+              backgroundColor: showProfileMenu
+                ? (isDarkMode ? 'rgba(39, 39, 42, 1)' : 'rgba(244, 244, 245, 1)')
+                : 'transparent',
+              transition: 'background-color 0.15s ease',
+              width: '100%'
+            }}
+          >
             <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '10px',
-            overflow: 'hidden',
-            flexShrink: 0
-          }}>
+              width: '32px',
+              height: '32px',
+              borderRadius: '10px',
+              overflow: 'hidden',
+              flexShrink: 0
+            }}>
               <img src="/assets/profile-shashpicious.jpg" style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover'
-            }} alt="shashpicious Avatar" />
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
+              }} alt="" />
             </div>
             {!isCollapsed && (
-            <>
-            <div style={{
-            flex: 1,
-            overflow: 'hidden'
-          }}>
-              <div data-scramble="profile" style={{
-              color: colors.textPrimary,
-              fontSize: '14px',
-              fontWeight: 500,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}>shashpicious</div>
-              <div data-scramble="profile" style={{
-              color: colors.textSecondary,
-              fontSize: '12px',
-              fontWeight: 300,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}>png.shashi@gmail.com</div>
-            </div>
-            <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/125d49d8-142b-42e6-9e68-672689aeaf70.svg" style={{
-            width: '16px',
-            flexShrink: 0,
-            filter: isDarkMode ? 'grayscale(100%) brightness(1.4) invert(0.15)' : 'none'
-          }} />
-            </>
+              <>
+                <div style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
+                  <div style={{
+                    color: colors.sidebarForeground,
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    fontFamily: '"Geist", sans-serif',
+                    lineHeight: '20px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>Anmol Education</div>
+                  <div style={{
+                    color: colors.textSecondary,
+                    fontSize: '12px',
+                    fontWeight: 300,
+                    fontFamily: '"Geist", sans-serif',
+                    lineHeight: '16px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>arthur@alignui.com</div>
+                </div>
+                <ChevronsUpDown size={16} color={colors.textSecondary} strokeWidth={1.5} style={{ flexShrink: 0 }} aria-hidden />
+              </>
             )}
           </div>
         </footer>
@@ -2586,13 +2254,13 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
         {showProfileMenu && (
           <motion.div
             ref={profileMenuRef}
-            initial={{ opacity: 0, y: 8, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.97 }}
-            transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
             style={{
               position: 'absolute',
-              bottom: '60px',
+              bottom: '16px',
               left: '8px',
               width: '240px',
               backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'white',
@@ -2603,7 +2271,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               overflow: 'hidden'
             }}
           >
-            {/* Header */}
+            {/* Header — muted bg */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -2611,112 +2279,96 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               padding: '12px',
               backgroundColor: isDarkMode ? 'rgba(39, 39, 42, 1)' : 'rgba(245, 245, 245, 1)',
               borderBottom: `1px solid ${colors.border}`,
+              boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)'
             }}>
               <div style={{ width: '32px', height: '32px', borderRadius: '10px', overflow: 'hidden', flexShrink: 0 }}>
                 <img src="/assets/profile-shashpicious.jpg" style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Avatar" />
               </div>
               <div style={{ flex: 1, overflow: 'hidden' }}>
-                <div style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '20px' }}>shashpicious</div>
-                <div style={{ fontSize: '12px', fontWeight: 300, color: colors.textSecondary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '16px' }}>png.shashi@gmail.com</div>
+                <div style={{ fontSize: '14px', fontWeight: 500, color: colors.sidebarForeground, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '20px', fontFamily: '"Geist", sans-serif' }}>Anmol Education</div>
+                <div style={{ fontSize: '12px', fontWeight: 300, color: colors.sidebarForeground, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: '16px', fontFamily: '"Geist", sans-serif' }}>arthur@alignui.com</div>
               </div>
             </div>
 
-            {/* Top Menu Items */}
-            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => { setShowProfileMenu(false); setActiveNavigation('AccountDetails'); }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <circle cx="8" cy="5.5" r="2.5" stroke={colors.textPrimary} strokeWidth="1.3" />
-                  <path d="M2.5 13.5C2.5 11.015 5.015 9 8 9s5.5 2.015 5.5 4.5" stroke={colors.textPrimary} strokeWidth="1.3" strokeLinecap="round" />
-                </svg>
-                <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Account Details</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => { setShowProfileMenu(false); setActiveNavigation('Teams'); }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <circle cx="5.5" cy="5" r="2" stroke={colors.textPrimary} strokeWidth="1.3" />
-                  <circle cx="10.5" cy="5" r="2" stroke={colors.textPrimary} strokeWidth="1.3" />
-                  <path d="M1 13.5c0-2.209 2.015-4 4.5-4M15 13.5c0-2.209-2.015-4-4.5-4M8 13.5c0-2.209 1.119-4 2.5-4" stroke={colors.textPrimary} strokeWidth="1.3" strokeLinecap="round" />
-                </svg>
-                <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Teams</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M9 2h5v5M14 2L8 8M6.5 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1V9.5" stroke={colors.textPrimary} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Visit amber student</span>
-              </div>
-            </div>
-
-            {/* Separator */}
-            <div style={{ height: '1px', backgroundColor: colors.border }} />
-
-            {/* Bottom Menu Items */}
-            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '13px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3M11 11l3-3-3-3M14 8H6" stroke="#EF4444" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Log Out</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <circle cx="8" cy="8" r="3" stroke={colors.textPrimary} strokeWidth="1.3" />
-                    <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06" stroke={colors.textPrimary} strokeWidth="1.3" strokeLinecap="round" />
-                  </svg>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Theme</span>
+            {/* Menu Items */}
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Top group */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => { setShowProfileMenu(false); if (activeNavigation !== 'AccountDetails' && activeNavigation !== 'Teams') { mainNavBeforeProfilePageRef.current = activeNavigation; } setActiveNavigation('AccountDetails'); }}>
+                  <CircleUser size={16} color={colors.sidebarForeground} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: '14px', fontWeight: 400, color: colors.sidebarForeground, lineHeight: '20px', fontFamily: '"Geist", sans-serif' }}>Account Details</span>
                 </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  backgroundColor: isDarkMode ? 'rgba(39, 39, 42, 1)' : 'rgba(245, 245, 245, 1)',
-                  borderRadius: '10px',
-                  padding: '3px',
-                  gap: '1px'
-                }}>
-                  {/* Light */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setIsDarkMode(false); setThemePreference('light'); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      width: '28px', height: '24px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                      backgroundColor: themePreference === 'light' ? (isDarkMode ? 'rgba(10,10,10,1)' : 'white') : 'transparent',
-                      boxShadow: themePreference === 'light' ? '0px 1px 3px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)' : 'none',
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                      <circle cx="8" cy="8" r="3" stroke={colors.textPrimary} strokeWidth="1.4" />
-                      <path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.05 1.05M11.55 11.55l1.05 1.05M3.4 12.6l1.05-1.05M11.55 4.45l1.05-1.05" stroke={colors.textPrimary} strokeWidth="1.4" strokeLinecap="round" />
-                    </svg>
-                  </button>
-                  {/* Dark */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setIsDarkMode(true); setThemePreference('dark'); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      width: '28px', height: '24px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                      backgroundColor: themePreference === 'dark' ? (isDarkMode ? 'rgba(10,10,10,1)' : 'white') : 'transparent',
-                      boxShadow: themePreference === 'dark' ? '0px 1px 3px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)' : 'none',
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                      <path d="M13.5 9.5A6 6 0 016.5 2.5a6.5 6.5 0 107 7z" stroke={colors.textPrimary} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                  {/* System */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setThemePreference('system'); setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      width: '28px', height: '24px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-                      backgroundColor: themePreference === 'system' ? (isDarkMode ? 'rgba(10,10,10,1)' : 'white') : 'transparent',
-                      boxShadow: themePreference === 'system' ? '0px 1px 3px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)' : 'none',
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                      <rect x="1.5" y="2" width="13" height="9" rx="1.5" stroke={colors.textPrimary} strokeWidth="1.4" />
-                      <path d="M5.5 14h5M8 11v3" stroke={colors.textPrimary} strokeWidth="1.4" strokeLinecap="round" />
-                    </svg>
-                  </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => { setShowProfileMenu(false); if (activeNavigation !== 'AccountDetails' && activeNavigation !== 'Teams') { mainNavBeforeProfilePageRef.current = activeNavigation; } setActiveNavigation('Teams'); }}>
+                  <Users size={16} color={colors.sidebarForeground} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: '14px', fontWeight: 400, color: colors.sidebarForeground, lineHeight: '20px', fontFamily: '"Geist", sans-serif' }}>Teams</span>
+                </div>
+                <a href="https://amberstudent.com/" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', textDecoration: 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <img src="https://www.figma.com/api/mcp/asset/62208580-3f48-4920-88ac-2fdfd8824b74" alt="" style={{ width: '16px', height: '16px', flexShrink: 0, filter: isDarkMode ? 'invert(1) brightness(2)' : 'none' }} />
+                    <span style={{ fontSize: '14px', fontWeight: 400, color: colors.sidebarForeground, lineHeight: '20px', fontFamily: '"Geist", sans-serif' }}>Visit amber student</span>
+                  </div>
+                  <ExternalLink size={16} color={colors.sidebarForeground} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+                </a>
+              </div>
+
+              {/* Separator */}
+              <div style={{ height: '1px', backgroundColor: colors.border }} />
+
+              {/* Bottom group */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <LogOut size={16} color="#dc2626" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: '14px', fontWeight: 400, color: '#dc2626', lineHeight: '20px', fontFamily: '"Geist", sans-serif' }}>Log Out</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Palette size={16} color={colors.sidebarForeground} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+                    <span style={{ fontSize: '14px', fontWeight: 400, color: colors.sidebarForeground, lineHeight: '20px', fontFamily: '"Geist", sans-serif' }}>Theme</span>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    backgroundColor: isDarkMode ? 'rgba(39, 39, 42, 1)' : 'rgba(245, 245, 245, 1)',
+                    borderRadius: '10px',
+                    padding: '3px'
+                  }}>
+                    {/* Light */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setIsDarkMode(false); setThemePreference('light'); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '4px 8px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                        backgroundColor: themePreference === 'light' ? (isDarkMode ? 'rgba(10,10,10,1)' : 'white') : 'transparent',
+                        boxShadow: themePreference === 'light' ? '0px 1px 3px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)' : 'none',
+                      }}
+                    >
+                      <Sun size={16} color={colors.sidebarForeground} strokeWidth={1.5} />
+                    </button>
+                    {/* Dark */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setIsDarkMode(true); setThemePreference('dark'); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '4px 8px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                        backgroundColor: themePreference === 'dark' ? (isDarkMode ? 'rgba(10,10,10,1)' : 'white') : 'transparent',
+                        boxShadow: themePreference === 'dark' ? '0px 1px 3px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)' : 'none',
+                      }}
+                    >
+                      <Moon size={16} color={colors.sidebarForeground} strokeWidth={1.5} />
+                    </button>
+                    {/* System */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setThemePreference('system'); setIsDarkMode(window.matchMedia('(prefers-color-scheme: dark)').matches); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '4px 8px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                        backgroundColor: themePreference === 'system' ? (isDarkMode ? 'rgba(10,10,10,1)' : 'white') : 'transparent',
+                        boxShadow: themePreference === 'system' ? '0px 1px 3px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1)' : 'none',
+                      }}
+                    >
+                      <Monitor size={16} color={colors.sidebarForeground} strokeWidth={1.5} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2728,19 +2380,21 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
       <main
         style={{
           flex: 1,
+          minHeight: 0,
           display: 'flex',
           flexDirection: 'column',
           position: 'relative',
           overflow: 'hidden',
-          minWidth: 0
+          minWidth: 0,
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
         }}
       >
         {activeNavigation === 'Listings' ? (
           <>
-            {/* Listings Header */}
+            {/* Listings — top bar (Figma: home + LISTINGS + Export) */}
             <header style={{
               height: '56px',
-              padding: '0 24px',
+              padding: '8px 24px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -2748,125 +2402,76 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg" style={{ width: '20px' }} alt="back" />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ cursor: 'pointer' }} onClick={() => setActiveNavigation('Insights')}>
+                  <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
                 <div style={{ height: '16px', borderLeft: `1px solid ${colors.border}` }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist Mono"', textTransform: 'uppercase' }}>Dashboard</span>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/42fc4aca-b2d6-4358-bd46-3ec69e3c9773.svg" style={{ width: '14px' }} alt=">" />
-                  <span style={{ fontSize: '14px', color: colors.textPrimary, fontFamily: '"Geist Mono"', textTransform: 'uppercase' }}>Listings</span>
-                </div>
+                <span style={{ fontSize: '14px', color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', fontWeight: 400, textTransform: 'uppercase', letterSpacing: '0.02em' }}>Listings</span>
               </div>
+              <button
+                type="button"
+                onClick={() => { playClickSound(); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '8px',
+                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                <img src={isDarkMode ? 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/a7aea9d4-4862-4777-a667-d1f47c0a09a6.svg' : 'https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/515ca86f-0c62-489e-ac2f-446ec51a901e.svg'} style={{ width: '20px' }} alt="" />
+                <span style={{ color: isDarkMode ? 'white' : 'rgba(10, 10, 10, 1)', fontSize: '14px', fontWeight: 500, fontFamily: '"Inter", sans-serif', letterSpacing: '-0.084px' }}>Export</span>
+              </button>
             </header>
 
-            {/* Listings Stats Banner */}
+            {/* Toolbar: search + City + Status */}
             <div style={{
-              padding: '16px 24px',
-              display: 'flex',
-              alignItems: 'stretch',
-              backgroundColor: colors.bg,
-              borderBottom: `1px solid ${colors.border}`,
-            }}>
-              {/* Stat 1: Total Amount Pending */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Total Amount Pending</span>
-                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>$33,474</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>-3.2%</span>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14 6L6 14M6 14H11M6 14V9" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </div>
-                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#9333ea', width: '100%' }} />
-              </div>
-
-              {/* Divider 1 */}
-              <div style={{ width: '1px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}`, margin: '0 24px' }} />
-
-              {/* Stat 2: Total Invoices Pending */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Total Invoices Pending</span>
-                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>12</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>-6.4%</span>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14 6L6 14M6 14H11M6 14V9" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </div>
-                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#22d3ee', width: '100%' }} />
-              </div>
-
-              {/* Divider 2 */}
-              <div style={{ width: '1px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}`, margin: '0 24px' }} />
-
-              {/* Stat 3: Total Amount Overdue */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Total Amount Overdue</span>
-                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>$3,474</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>+0.8%</span>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 14L14 6M14 6H9M14 6V11" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </div>
-                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#9333ea', width: '100%' }} />
-              </div>
-
-              {/* Divider 3 */}
-              <div style={{ width: '1px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}`, margin: '0 24px' }} />
-
-              {/* Stat 4: Total Invoices Overdue */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Total Invoices Overdue</span>
-                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>08</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>-3.2%</span>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14 6L6 14M6 14H11M6 14V9" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </div>
-                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#22d3ee', width: '100%' }} />
-              </div>
-            </div>
-
-            {/* Listings Filter / Search Bar */}
-            <div style={{
-              height: '68px',
-              padding: '0 24px',
+              minHeight: '68px',
+              padding: '16px 16px 16px 24px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              gap: '16px',
               borderBottom: `1px solid ${colors.border}`,
-              backgroundColor: colors.bg
+              backgroundColor: colors.bg,
+              flexWrap: 'wrap'
             }}>
-              {/* Search Input */}
               <div style={{
-                width: '320px',
-                height: '36px',
+                width: '100%',
+                maxWidth: '320px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                padding: '0 8px',
+                padding: '6px 8px 6px 8px',
                 border: `1px solid ${colors.border}`,
                 borderRadius: '8px',
-                backgroundColor: colors.bg,
+                backgroundColor: colors.inputBg,
                 boxShadow: '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
               }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
                 </svg>
                 <input
                   type="text"
                   value={listingsSearchQuery}
                   onChange={(e) => { setListingsSearchQuery(e.target.value); setListingsPage(1); }}
-                  placeholder="Invoice Number"
+                  placeholder="Search by name"
                   style={{
                     flex: 1,
+                    minWidth: 0,
                     border: 'none',
                     outline: 'none',
                     fontSize: '14px',
+                    lineHeight: '20px',
                     color: colors.textPrimary,
                     backgroundColor: 'transparent',
-                    fontFamily: '"Geist", sans-serif'
+                    fontFamily: '"Geist", sans-serif',
+                    fontWeight: 400
                   }}
                 />
                 <div style={{
@@ -2881,15 +2486,13 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                   textTransform: 'uppercase'
                 }}>⌘K</div>
               </div>
-
-              {/* Filter Dropdowns */}
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginLeft: 'auto' }}>
                 <div style={{ position: 'relative' }}>
                   <select
-                    value={listingsProviderFilter}
-                    onChange={(e) => { setListingsProviderFilter(e.target.value); setListingsPage(1); }}
+                    value={listingsCityFilter}
+                    onChange={(e) => { setListingsCityFilter(e.target.value); setListingsPage(1); }}
                     style={{
-                      padding: '6px 32px 6px 12px',
+                      padding: '6px 36px 6px 12px',
                       border: `1px solid ${colors.border}`,
                       borderRadius: '8px',
                       background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
@@ -2900,17 +2503,22 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                       cursor: 'pointer',
                       appearance: 'none',
                       outline: 'none',
-                      minWidth: '140px'
+                      minWidth: '120px'
                     }}
                   >
-                    <option value="">Invoice Date</option>
+                    <option value="">City</option>
+                    {listingsCityOptions.map((c: string) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
                   </select>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} alt="" />
                 </div>
                 <div style={{ position: 'relative' }}>
                   <select
+                    value={listingsStatusFilter}
+                    onChange={(e) => { setListingsStatusFilter(e.target.value); setListingsPage(1); }}
                     style={{
-                      padding: '6px 32px 6px 12px',
+                      padding: '6px 36px 6px 12px',
                       border: `1px solid ${colors.border}`,
                       borderRadius: '8px',
                       background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
@@ -2921,66 +2529,46 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                       cursor: 'pointer',
                       appearance: 'none',
                       outline: 'none',
-                      minWidth: '130px'
-                    }}
-                  >
-                    <option value="">Due Date</option>
-                  </select>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
-                </div>
-                <div style={{ position: 'relative' }}>
-                  <select
-                    value={listingsProviderFilter}
-                    onChange={(e) => { setListingsProviderFilter(e.target.value); setListingsPage(1); }}
-                    style={{
-                      padding: '6px 32px 6px 12px',
-                      border: `1px solid ${colors.border}`,
-                      borderRadius: '8px',
-                      background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-                      color: colors.textPrimary,
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      fontFamily: '"Geist", sans-serif',
-                      cursor: 'pointer',
-                      appearance: 'none',
-                      outline: 'none',
-                      minWidth: '130px'
+                      minWidth: '120px'
                     }}
                   >
                     <option value="">Status</option>
-                    {listingsProviders.map((p: any) => (
-                      <option key={p} value={p}>{p}</option>
+                    {listingsStatusOptions.map((s: string) => (
+                      <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} alt="" />
                 </div>
               </div>
             </div>
 
-            {/* Listings Table */}
+            {/* Property table */}
             <AnimatePresence mode="wait">
               <motion.div
-                key={`listings-${listingsPage}-${listingsSearchQuery}-${listingsProviderFilter}`}
+                key={`listings-${listingsPage}-${listingsSearchQuery}-${listingsCityFilter}-${listingsStatusFilter}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                style={{ flex: 1, overflowX: 'auto' }}
+                style={{ flex: 1, overflow: 'auto', backgroundColor: colors.bg, minHeight: 0 }}
               >
-                <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-                  <thead>
+                <table style={{ width: '100%', maxWidth: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                  <colgroup>
+                    <col />
+                    <col style={{ width: '180px' }} />
+                    <col style={{ width: '160px' }} />
+                    <col style={{ width: '280px' }} />
+                  </colgroup>
+                  <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
                     <tr style={{
                       backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)',
                       borderBottom: `1px solid ${colors.border}`,
                       height: '42px'
                     }}>
-                      <th style={{ padding: '0 16px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Invoice Number</th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}`, cursor: 'pointer' }} onClick={() => handleListingsSort('invoiceDate')}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>Invoice Date <svg width="12" height="12" viewBox="0 0 13.5 12.1667" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.75 8.75L10.0833 11.4167M10.0833 11.4167L7.41667 8.75M10.0833 11.4167V0.75M0.75 3.41667L3.41667 0.75M3.41667 0.75L6.08333 3.41667M3.41667 0.75V11.4167" stroke={colors.textSecondary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span></th>
-                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}`, cursor: 'pointer' }} onClick={() => handleListingsSort('totalAmount')}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>Total Amount <svg width="12" height="12" viewBox="0 0 13.5 12.1667" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.75 8.75L10.0833 11.4167M10.0833 11.4167L7.41667 8.75M10.0833 11.4167V0.75M0.75 3.41667L3.41667 0.75M3.41667 0.75L6.08333 3.41667M3.41667 0.75V11.4167" stroke={colors.textSecondary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span></th>
-                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}`, cursor: 'pointer' }} onClick={() => handleListingsSort('balance')}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>Balance <svg width="12" height="12" viewBox="0 0 13.5 12.1667" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.75 8.75L10.0833 11.4167M10.0833 11.4167L7.41667 8.75M10.0833 11.4167V0.75M0.75 3.41667L3.41667 0.75M3.41667 0.75L6.08333 3.41667M3.41667 0.75V11.4167" stroke={colors.textSecondary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span></th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}`, cursor: 'pointer' }} onClick={() => handleListingsSort('dueDate')}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>Due Date <svg width="12" height="12" viewBox="0 0 13.5 12.1667" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.75 8.75L10.0833 11.4167M10.0833 11.4167L7.41667 8.75M10.0833 11.4167V0.75M0.75 3.41667L3.41667 0.75M3.41667 0.75L6.08333 3.41667M3.41667 0.75V11.4167" stroke={colors.textSecondary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></span></th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Status</th>
-                      <th style={{ width: '140px', padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Actions</th>
+                      <th style={{ padding: '0 16px 0 24px', textAlign: 'left', fontSize: '13px', lineHeight: '20px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Property</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', lineHeight: '20px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Status</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', lineHeight: '20px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Price</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', lineHeight: '20px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2990,40 +2578,94 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: idx * 0.03, ease: [0.4, 0, 0.2, 1] }}
-                        style={{ borderBottom: `1px solid ${colors.border}`, height: '56px', backgroundColor: colors.bg }}
+                        style={{ borderBottom: `1px solid ${colors.border}`, backgroundColor: colors.bg }}
                         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDarkMode ? 'rgba(23, 23, 23, 0.6)' : 'rgba(250, 250, 250, 0.7)'; }}
                         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = colors.bg; }}
                       >
-                        <td style={{ padding: '0 16px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif' }}>{item.invoiceNumber}</td>
-                        <td style={{ padding: '8px 8px', fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist Mono"' }}>{item.invoiceDate}</td>
-                        <td style={{ padding: '0 8px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', textAlign: 'center' }}>{item.totalAmount}</td>
-                        <td style={{ padding: '0 8px', fontSize: '14px', fontWeight: 400, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', textAlign: 'center' }}>{item.balance}</td>
-                        <td style={{ padding: '8px 8px', fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist Mono"' }}>{item.dueDate}</td>
-                        <td style={{ padding: '0 8px' }}>{getStatusBadge(item.status)}</td>
-                        <td style={{ padding: '0 8px', textAlign: 'center' }}>
-                          <button
-                            onClick={() => { playClickSound(); }}
-                            style={{
-                              padding: '4px 12px',
-                              border: `1px solid ${colors.border}`,
-                              borderRadius: '8px',
-                              backgroundColor: isDarkMode ? 'rgba(39, 39, 42, 1)' : 'rgba(245, 245, 245, 1)',
-                              color: colors.textPrimary,
-                              fontSize: '12px',
-                              fontWeight: 500,
-                              fontFamily: '"Geist", sans-serif',
-                              cursor: 'pointer',
-                              height: '26px',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={colors.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
-                            </svg>
-                            Download
-                          </button>
+                        <td style={{ padding: '8px 16px 8px 24px', verticalAlign: 'middle' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            <div style={{ width: '148px', height: '80px', borderRadius: '5.35px', overflow: 'hidden', flexShrink: 0, backgroundColor: colors.border }}>
+                              <img src={item.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                              <span style={{ fontSize: '16px', lineHeight: '24px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif' }}>{item.title}</span>
+                              <span style={{ fontSize: '14px', lineHeight: '20px', fontWeight: 400, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>{item.address}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '8px', verticalAlign: 'middle' }}>{getStatusBadge(item.listingStatus)}</td>
+                        <td style={{ padding: '8px', verticalAlign: 'middle' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                            <span style={{ fontSize: '12px', lineHeight: '16px', fontWeight: 400, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Starts at</span>
+                            <span style={{ fontSize: 0, lineHeight: '20px', whiteSpace: 'nowrap' }}>
+                              <span style={{ fontFamily: '"Geist Mono", monospace', fontWeight: 500, fontSize: '16px', lineHeight: '20px', color: colors.textPrimary }}>${item.priceAmount}/</span>
+                              <span style={{ fontFamily: '"Geist", sans-serif', fontWeight: 400, fontSize: '12px', lineHeight: '16px', color: colors.textSecondary }}>{item.priceUnit}</span>
+                            </span>
+                          </div>
+                        </td>
+                        <td style={{ padding: '8px 24px 8px 8px', verticalAlign: 'middle', textAlign: 'left' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start', gap: '12px' }}>
+                            <button
+                              type="button"
+                              onClick={() => { playClickSound(); setShowCommissionModal(true); }}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '6px 12px',
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: '8px',
+                                background: isDarkMode ? 'rgba(10, 10, 10, 1)' : '#ffffff',
+                                color: colors.textPrimary,
+                                fontSize: '14px',
+                                fontWeight: 500,
+                                fontFamily: '"Inter", sans-serif',
+                                letterSpacing: '-0.084px',
+                                cursor: 'pointer',
+                                boxShadow: 'none'
+                              }}
+                            >
+                              <DollarSign size={20} strokeWidth={2} color={colors.textPrimary} aria-hidden />
+                              Commissions
+                            </button>
+                            {/* Commission Modal rendered via portal at bottom */}
+                            <button
+                              type="button"
+                              onClick={() => { playClickSound(); }}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '8px',
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: '8px',
+                                background: isDarkMode ? 'rgba(10, 10, 10, 1)' : '#ffffff',
+                                boxShadow: '0px 1px 2px 0px rgba(10, 13, 20, 0.05)',
+                                cursor: 'pointer'
+                              }}
+                              aria-label="Hand pause listing"
+                            >
+                              <Hand size={16} strokeWidth={2} color={colors.textPrimary} aria-hidden />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { playClickSound(); }}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '8px',
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: '8px',
+                                background: isDarkMode ? 'rgba(10, 10, 10, 1)' : '#ffffff',
+                                boxShadow: '0px 1px 2px 0px rgba(10, 13, 20, 0.05)',
+                                cursor: 'pointer'
+                              }}
+                              aria-label="Open listing"
+                            >
+                              <ExternalLink size={16} strokeWidth={2} color={colors.textPrimary} aria-hidden />
+                            </button>
+                          </div>
                         </td>
                       </motion.tr>
                     ))}
@@ -3032,19 +2674,19 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               </motion.div>
             </AnimatePresence>
 
-            {/* Listings Pagination Footer */}
             <footer style={{
-              height: '68px',
+              minHeight: '68px',
               padding: '0 24px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               borderTop: `1px solid ${colors.border}`,
               marginTop: 'auto',
-              backgroundColor: colors.bg
+              backgroundColor: colors.bg,
+              flexShrink: 0
             }}>
-              <span style={{ fontSize: '14px', color: colors.textSecondary }}>
-                Showing {listingsStartItem} to {listingsEndItem} of {listingsTotalItems} entries
+              <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>
+                Showing {currentListingsData.length} of {listingsTotalItems} entries
               </span>
               <div style={{ display: 'flex', gap: '4px' }}>
                 <button onClick={handleListingsPrevious} disabled={listingsPage === 1} style={{
@@ -3095,7 +2737,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
           </>
         ) : activeNavigation === 'Invoices' ? (
           <>
-            {/* Commissions Header */}
+            {/* Invoices header */}
             <header style={{
               height: '56px',
               padding: '0 24px',
@@ -3103,308 +2745,399 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               borderBottom: `1px solid ${colors.border}`,
-              backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)'
+              backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : '#fafafa',
+              flexShrink: 0
             }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px'
-              }}>
-                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg" style={{
-                  width: '20px'
-                }} alt="back" />
-                <div style={{
-                  height: '16px',
-                  borderLeft: `1px solid ${colors.border}`
-                }} />
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <span style={{
-                    fontSize: '14px',
-                    color: colors.textSecondary,
-                    fontFamily: '"Geist Mono"',
-                    textTransform: 'uppercase'
-                  }}>Dashboard</span>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/42fc4aca-b2d6-4358-bd46-3ec69e3c9773.svg" style={{
-                    width: '14px'
-                  }} />
-                  <span style={{
-                    fontSize: '14px',
-                    color: colors.textPrimary,
-                    fontFamily: '"Geist Mono"',
-                    textTransform: 'uppercase'
-                  }}>Invoices</span>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ cursor: 'pointer' }} onClick={() => setActiveNavigation('Insights')}>
+                  <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                <div style={{ height: '16px', borderLeft: `1px solid ${colors.border}` }} />
+                <span style={{
+                  fontSize: '14px',
+                  color: colors.textPrimary,
+                  fontFamily: '"Geist Mono", monospace',
+                  fontWeight: 400,
+                  textTransform: 'uppercase',
+                  lineHeight: '20px'
+                }}>Invoices</span>
               </div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '16px'
-              }}>
-                <button style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 12px',
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '8px',
-                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-                  cursor: 'pointer'
-                }}>
-                  <img src={isDarkMode ? "https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/a7aea9d4-4862-4777-a667-d1f47c0a09a6.svg" : "https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/515ca86f-0c62-489e-ac2f-446ec51a901e.svg"} style={{
-                    width: '20px'
-                  }} />
-                  <span style={{
-                    color: isDarkMode ? 'white' : 'rgba(10, 10, 10, 1)',
-                    fontSize: '14px',
-                    fontWeight: 500
-                  }}>Export</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                {/* Export button — outlined */}
+                <button
+                  type="button"
+                  onClick={() => playClickSound()}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 12px',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '8px',
+                    background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                    cursor: 'pointer',
+                    boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)',
+                  }}
+                >
+                  <FileInput size={20} color={colors.textPrimary} strokeWidth={1.5} aria-hidden />
+                  <span style={{ color: colors.textPrimary, fontSize: '14px', fontWeight: 500, fontFamily: '"Inter", sans-serif', letterSpacing: '-0.084px' }}>Export</span>
+                </button>
+                {/* Raise a request — fancy gradient button */}
+                <button
+                  type="button"
+                  onClick={() => playClickSound()}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '6px 20px',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 100%), linear-gradient(90deg, #0c63f8 0%, #0c63f8 100%)',
+                    boxShadow: '0px 1px 2px 0px rgba(14,18,27,0.24), 0px 0px 0px 1px #1b6df8',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Hand size={20} color="white" strokeWidth={1.5} aria-hidden />
+                  <span style={{ color: 'white', fontSize: '14px', fontWeight: 500, fontFamily: '"Inter", sans-serif', letterSpacing: '-0.084px', padding: '0 4px' }}>Raise a request</span>
                 </button>
               </div>
             </header>
 
-            {/* Filters */}
+            {/* Scrollable area: stats scroll away, invoice age + filter + thead stick */}
+            <div style={{ flex: 1, overflow: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+
+            {/* Invoices Stats Banner — scrolls away */}
             <div style={{
-              padding: '16px 24px',
-              backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+              minHeight: '168px',
+              padding: '24px',
               display: 'flex',
               alignItems: 'center',
               gap: '16px',
-              borderBottom: `1px solid ${colors.border}`
+              backgroundColor: isDarkMode ? colors.bg : '#ffffff',
+              borderBottom: `1px solid ${colors.border}`,
+              flexShrink: 0,
             }}>
-              {/* Status Filter */}
-              <div style={{
-                position: 'relative'
-              }}>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setCommissionsPage(1);
-                  }}
-                  style={{
-                    padding: '6px 32px 6px 12px',
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: '8px',
-                    background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-                    color: colors.textPrimary,
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    appearance: 'none',
-                    outline: 'none',
-                    minWidth: '120px'
-                  }}
-                >
-                  <option value="">Status</option>
-                  <option value="Paid">Paid</option>
-                  <option value="Partially_paid">Partially_paid</option>
-                  <option value="Unpaid">Unpaid</option>
-                </select>
-                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{
-            position: 'absolute',
-                  right: '8px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: '16px',
-            pointerEvents: 'none'
-          }} />
-              </div>
+              {[
+                { label: 'Total Amount Pending', value: '$33,474', delta: '3%', up: false, bar: '#9333ea' },
+                { label: 'Total Invoices Pending', value: '12', delta: '6%', up: false, bar: '#22d3ee' },
+                { label: 'Total Amount Overdue', value: '$3,474', delta: '1%', up: true, bar: '#9333ea' },
+                { label: 'Total Invoices Overdue', value: '08', delta: '3%', up: false, bar: '#22d3ee' },
+              ].map((kpi, ki) => (
+                <React.Fragment key={kpi.label}>
+                  {ki > 0 && (
+                    <div style={{ width: '0', alignSelf: 'stretch', display: 'flex', alignItems: 'center' }}>
+                      <div style={{ width: '1px', height: '100%', maxHeight: '120px', backgroundImage: `repeating-linear-gradient(to bottom, ${colors.border} 0, ${colors.border} 4px, transparent 4px, transparent 8px)` }} />
+                    </div>
+                  )}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', height: '120px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                      <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif', lineHeight: '20px' }}>{kpi.label}</span>
+                      <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>{kpi.value}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ alignSelf: 'center' }}>
+                          {kpi.up
+                            ? <path d="M4 10l4-4 4 4" fill="#16a34a" />
+                            : <path d="M4 6l4 4 4-4" fill="#dc2626" />}
+                        </svg>
+                        <span style={{ fontSize: '14px', fontWeight: 600, color: kpi.up ? '#16a34a' : '#dc2626', fontFamily: '"Geist Mono", monospace', lineHeight: '22px' }}>{kpi.delta}</span>
+                      </div>
+                      <span style={{ fontSize: '12px', fontWeight: 500, color: '#5c5c5c', fontFamily: '"Geist", sans-serif', lineHeight: '16px', paddingBottom: '2px' }}>vs last week</span>
+                    </div>
+                    <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: kpi.bar, width: '100%' }} />
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
 
-              {/* Booking Type Filter */}
+            {/* Invoice Age — sticky */}
             <div style={{
-                position: 'relative'
+              backgroundColor: isDarkMode ? colors.bg : '#ffffff',
+              borderTop: `1px solid ${colors.border}`,
+              borderBottom: `1px solid ${colors.border}`,
+              padding: '17px 24px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              flexWrap: 'nowrap',
+              minWidth: 0,
+              position: 'sticky',
+              top: 0,
+              zIndex: 12,
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: '16px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', lineHeight: '24px', whiteSpace: 'nowrap', flexShrink: 0 }}>Invoice Age:</span>
+              <div style={{
+                flex: 1,
+                minWidth: 0,
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarGutter: 'stable',
+                paddingBottom: '4px',
+                marginBottom: '-4px',
               }}>
-                <select
-                  value={bookingTypeFilter}
-                  onChange={(e) => {
-                    setBookingTypeFilter(e.target.value);
-                    setCommissionsPage(1);
-                  }}
-                  style={{
-                    padding: '6px 32px 6px 12px',
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: '8px',
-                    background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-                    color: colors.textPrimary,
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    appearance: 'none',
-                    outline: 'none',
-                    minWidth: '140px'
-                  }}
-                >
-                  <option value="">Booking Type</option>
-                  <option value="Advance">Advance</option>
-                  <option value="Booking">Booking</option>
-                </select>
-                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{
-                  position: 'absolute',
-                  right: '8px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: '16px',
-                  pointerEvents: 'none'
-                }} />
+                <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', gap: '12px', alignItems: 'center', width: 'max-content' }}>
+                {([
+                  { key: 'current', dot: '#2563eb', title: 'Current', amount: '$200k', count: '123 invoices', titleVariant: 'body' as const },
+                  { key: '1-15', dot: '#16a34a', title: '1–15 days', amount: '$200k', count: '123 invoices', titleVariant: 'mono' as const },
+                  { key: '16-30', dot: '#ca8a04', title: '16–30 days', amount: '$150k', count: '98 invoices', titleVariant: 'mono' as const },
+                  { key: '31-45', dot: '#ea580c', title: '31–45 days', amount: '$200k', count: '123 invoices', titleVariant: 'mono' as const },
+                  { key: 'gt45', dot: '#dc2626', title: '>45 days', amount: '$75k', count: '45 invoices', titleVariant: 'mono' as const },
+                ] as const).map((card) => {
+                  const active = invoiceAgeBucket === card.key;
+                  return (
+                    <button
+                      key={card.key}
+                      type="button"
+                      onClick={() => { setInvoiceAgeBucket(active ? '' : card.key); setInvoicesPage(1); playClickSound(); }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        padding: '8px',
+                        borderRadius: '8px',
+                        border: active ? '1px solid #1b6df8' : `1px solid ${colors.border}`,
+                        background: isDarkMode ? 'rgba(10,10,10,1)' : '#fff',
+                        boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: card.dot, flexShrink: 0 }} />
+                        {card.titleVariant === 'body' ? (
+                          <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', lineHeight: '20px' }}>{card.title}</span>
+                        ) : (
+                          <span style={{
+                            fontSize: '12px', fontWeight: 600, color: card.dot, fontFamily: '"Geist Mono", monospace',
+                            lineHeight: '16px', letterSpacing: '0.48px', textTransform: 'uppercase'
+                          }}>{card.title}</span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px', lineHeight: '16px' }}>
+                        <span style={{ fontFamily: '"Geist Mono", monospace', fontWeight: 600, color: colors.textPrimary }}>{card.amount}</span>
+                        <span style={{ color: colors.textSecondary, fontFamily: '"Geist", sans-serif', fontWeight: 400 }}>·</span>
+                        <span style={{ color: colors.textSecondary, fontFamily: '"Geist", sans-serif', fontWeight: 400 }}>{card.count}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+                </div>
               </div>
             </div>
 
-            {/* Commissions Table */}
+            {/* Invoices Filter / Search Bar — sticky */}
+            <div style={{
+              minHeight: '68px',
+              padding: '16px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: `1px solid ${colors.border}`,
+              backgroundColor: isDarkMode ? colors.bg : '#ffffff',
+              gap: '16px',
+              flexWrap: 'wrap',
+              position: 'sticky',
+              top: '58px',
+              zIndex: 11,
+              flexShrink: 0,
+            }}>
+              <div style={{
+                width: '320px',
+                maxWidth: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 8px 6px 8px',
+                border: `1px solid ${colors.border}`,
+                borderRadius: '8px',
+                backgroundColor: isDarkMode ? colors.bg : '#fff',
+                boxShadow: '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Invoice Number"
+                  value={invoiceSearchQuery}
+                  onChange={(e) => { setInvoiceSearchQuery(e.target.value); setInvoicesPage(1); }}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: '14px',
+                    color: colors.textPrimary,
+                    backgroundColor: 'transparent',
+                    fontFamily: '"Geist", sans-serif',
+                    fontWeight: 400
+                  }}
+                />
+                <div style={{
+                  padding: '2px 6px',
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  color: colors.textSecondary,
+                  fontFamily: '"Inter", sans-serif',
+                  letterSpacing: '0.48px',
+                  textTransform: 'uppercase'
+                }}>⌘K</div>
+              </div>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', flex: '1 1 320px', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={() => playClickSound()} style={{
+                  flex: '1 1 140px', maxWidth: '200px', height: '36px', display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '8px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px',
+                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : '#fff',
+                  boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)', cursor: 'pointer',
+                  fontSize: '14px', fontWeight: 400, fontFamily: '"Geist", sans-serif', color: colors.textSecondary
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+                  </svg>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Invoice Date</span>
+                </button>
+                <button type="button" onClick={() => playClickSound()} style={{
+                  flex: '1 1 140px', maxWidth: '200px', height: '36px', display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '8px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px',
+                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : '#fff',
+                  boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)', cursor: 'pointer',
+                  fontSize: '14px', fontWeight: 400, fontFamily: '"Geist", sans-serif', color: colors.textSecondary
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+                  </svg>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Due Date</span>
+                </button>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={invoiceStatusFilter}
+                    onChange={(e) => { setInvoiceStatusFilter(e.target.value); setInvoicesPage(1); }}
+                    style={{
+                      padding: '6px 40px 6px 12px',
+                      height: '36px',
+                      border: `1px solid ${colors.border}`,
+                      borderRadius: '8px',
+                      background: isDarkMode ? 'rgba(10, 10, 10, 1)' : '#fff',
+                      color: isDarkMode ? colors.textPrimary : '#404040',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      fontFamily: '"Geist", sans-serif',
+                      cursor: 'pointer',
+                      appearance: 'none',
+                      outline: 'none',
+                    }}
+                  >
+                    <option value="">Status</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Overdue">Overdue</option>
+                  </select>
+                  <ChevronDown size={20} color={colors.textSecondary} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} aria-hidden />
+                </div>
+              </div>
+            </div>
+
             <AnimatePresence mode="wait">
               <motion.div
-                key={commissionsPage}
+                key={`invoices-${invoicesPage}-${invoiceSearchQuery}-${invoiceStatusFilter}-${invoiceAgeBucket}-${invoiceSortKey}-${invoiceSortDir}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                transition={{
-                  duration: 0.3,
-                  ease: [0.4, 0, 0.2, 1]
-                }}
-                style={{
-                  flex: 1,
-                  overflow: 'auto',
-                  borderTop: `1px solid ${colors.border}`
-                }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                style={{ backgroundColor: isDarkMode ? colors.bg : '#fff' }}
               >
-                <table style={{
-                  width: '100%',
-                  borderCollapse: 'collapse'
-                }}>
-                  <thead>
+                <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                  <thead style={{ position: 'sticky', top: '126px', zIndex: 10 }}>
                     <tr style={{
-                      backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)',
-                      borderBottom: `1px solid ${colors.border}`
+                      backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : '#fafafa',
+                      borderBottom: `1px solid ${colors.border}`,
+                      height: '42px'
                     }}>
-                      <th style={{
-                        textAlign: 'left',
-                        padding: '12px 24px',
-                        fontSize: '13px',
-                        color: colors.textSecondary,
-                        fontFamily: '"Geist Mono"',
-                        fontWeight: 500
-                      }}>PO NUMBER</th>
-                      <th style={{
-                        textAlign: 'left',
-                        padding: '12px 8px',
-                        fontSize: '13px',
-                        color: colors.textSecondary,
-                        fontFamily: '"Geist Mono"',
-                        fontWeight: 500
-                      }}>BOOKING TYPE</th>
-                      <th style={{
-                        textAlign: 'left',
-                        padding: '12px 8px',
-                        fontSize: '13px',
-                        color: colors.textSecondary,
-                        fontFamily: '"Geist Mono"',
-                        fontWeight: 500
-                      }}>DATE</th>
-                      <th style={{
-                        textAlign: 'left',
-                        padding: '12px 8px',
-                        fontSize: '13px',
-                        color: colors.textSecondary,
-                        fontFamily: '"Geist Mono"',
-                        fontWeight: 500
-                      }}>STATUS</th>
-                      <th style={{
-                        textAlign: 'right',
-                        padding: '12px 8px',
-                        fontSize: '13px',
-                        color: colors.textSecondary,
-                        fontFamily: '"Geist Mono"',
-                        fontWeight: 500
-                      }}>AMOUNT</th>
-                      <th style={{
-                        textAlign: 'right',
-                        padding: '12px 8px',
-                        fontSize: '13px',
-                        color: colors.textSecondary,
-                        fontFamily: '"Geist Mono"',
-                        fontWeight: 500
-                      }}>AMOUNT DUE</th>
-                      <th style={{
-                        textAlign: 'right',
-                        padding: '12px 24px',
-                        fontSize: '13px',
-                        color: colors.textSecondary,
-                        fontFamily: '"Geist Mono"',
-                        fontWeight: 500
-                      }}>ACTION</th>
+                      <th style={{ padding: '0 8px 0 24px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', lineHeight: '20px', backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : '#fafafa' }}>INVOICE NUMBER</th>
+                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', lineHeight: '20px', backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : '#fafafa', cursor: 'pointer' }} onClick={() => toggleInvoiceSort('invoiceDate')}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                          INVOICE DATE
+                          <ArrowUpDown size={16} color={invoiceSortKey === 'invoiceDate' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} aria-hidden />
+                        </span>
+                      </th>
+                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', lineHeight: '20px', backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : '#fafafa', cursor: 'pointer' }} onClick={() => toggleInvoiceSort('total')}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          TOTAL AMOUNT
+                          <ArrowUpDown size={14} color={invoiceSortKey === 'total' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} aria-hidden />
+                        </span>
+                      </th>
+                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', lineHeight: '20px', backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : '#fafafa', cursor: 'pointer' }} onClick={() => toggleInvoiceSort('balance')}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          BALANCE
+                          <ArrowUpDown size={14} color={invoiceSortKey === 'balance' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} aria-hidden />
+                        </span>
+                      </th>
+                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', lineHeight: '20px', backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : '#fafafa', cursor: 'pointer' }} onClick={() => toggleInvoiceSort('dueDate')}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          DUE DATE
+                          <ArrowUpDown size={14} color={invoiceSortKey === 'dueDate' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} aria-hidden />
+                        </span>
+                      </th>
+                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', lineHeight: '20px', backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : '#fafafa' }}>STATUS</th>
+                      <th style={{ padding: '0 24px 0 8px', textAlign: 'right', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', lineHeight: '20px', backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : '#fafafa' }}>ACTIONS</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {currentCommissionsData.map((commission, i) => <motion.tr
-                      key={i}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{
-                        duration: 0.3,
-                        delay: i * 0.03,
-                        ease: [0.4, 0, 0.2, 1]
-                      }}
-                      style={{
-                        borderBottom: `1px solid ${colors.border}`
-                      }}
-                    >
-                      <td style={{
-                        padding: '8px 24px',
-                        fontSize: '14px',
-              fontWeight: 500,
-                        color: colors.textPrimary
-                      }}>{commission.poNumber}</td>
-                      <td style={{
-                        padding: '8px 8px',
-                        fontSize: '14px',
-                        color: colors.textPrimary
-                      }}>{commission.bookingType}</td>
-                      <td style={{
-                        padding: '8px 8px',
-                        fontSize: '14px',
-              color: colors.textPrimary,
-                        fontFamily: '"Geist Mono"'
-                      }}>{commission.date}</td>
-                      <td style={{
-                        padding: '8px 8px'
-                      }}>{getStatusBadge(commission.status)}</td>
-                      <td style={{
-                        padding: '8px 8px',
-                        textAlign: 'right',
-                        fontSize: '14px',
-                        color: colors.textPrimary,
-                        fontFamily: '"Geist Mono"'
-                      }}>{commission.amount}</td>
-                      <td style={{
-                        padding: '8px 8px',
-                        textAlign: 'right',
-                        fontSize: '14px',
-                        color: colors.textPrimary,
-                        fontFamily: '"Geist Mono"'
-                      }}>{commission.amountDue}</td>
-                      <td style={{
-                        padding: '8px 24px',
-                        textAlign: 'right'
-                      }}>
-                        <button style={{
-                          padding: '4px 12px',
-                          border: `1px solid ${colors.accent}`,
-                          borderRadius: '6px',
-                          background: 'transparent',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          fontWeight: 500,
-                          color: colors.accent
-                        }}>See Details</button>
-                      </td>
-                    </motion.tr>)}
+                    {currentInvoicesData.map((row: any, idx: number) => (
+                      <motion.tr
+                        key={`${row.invoiceNumber}-${invoicesStartIndex + idx}`}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: Math.min(idx * 0.02, 0.3), ease: [0.4, 0, 0.2, 1] }}
+                        style={{ borderBottom: `1px solid ${colors.border}`, height: '56px', backgroundColor: isDarkMode ? colors.bg : '#fff' }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDarkMode ? 'rgba(23, 23, 23, 0.6)' : 'rgba(250, 250, 250, 0.85)'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDarkMode ? colors.bg : '#fff'; }}
+                      >
+                        <td style={{ padding: '8px 8px 8px 24px', fontSize: '14px', fontWeight: 500, color: isDarkMode ? colors.textPrimary : '#171717', fontFamily: '"Geist Mono", monospace', verticalAlign: 'middle' }}>{row.invoiceNumber}</td>
+                        <td style={{ padding: '8px', fontSize: '14px', fontWeight: 400, color: colors.textSecondary, fontFamily: '"Geist Mono", monospace', verticalAlign: 'middle', textAlign: 'center' }}>{row.invoiceDate}</td>
+                        <td style={{ padding: '8px', fontSize: '14px', fontWeight: 400, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', textAlign: 'center', verticalAlign: 'middle' }}>{row.total}</td>
+                        <td style={{ padding: '8px', fontSize: '14px', fontWeight: 400, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', textAlign: 'center', verticalAlign: 'middle' }}>{row.balance}</td>
+                        <td style={{ padding: '8px', fontSize: '14px', fontWeight: 400, color: colors.textSecondary, fontFamily: '"Geist Mono", monospace', verticalAlign: 'middle', textAlign: 'center' }}>{row.dueDate}</td>
+                        <td style={{ padding: '8px', textAlign: 'center', verticalAlign: 'middle' }}>{getStatusBadge(row.status)}</td>
+                        <td style={{ padding: '8px 24px 8px 8px', textAlign: 'right', verticalAlign: 'middle' }}>
+                          <button
+                            type="button"
+                            onClick={() => playClickSound()}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 10px',
+                              border: `1px solid ${colors.border}`,
+                              borderRadius: '8px',
+                              background: isDarkMode ? 'rgba(10, 10, 10, 1)' : '#fff',
+                              cursor: 'pointer',
+                              fontSize: '13px',
+                              fontWeight: 500,
+                              fontFamily: '"Geist", sans-serif',
+                              color: colors.textPrimary
+                            }}
+                          >
+                            <Download size={14} strokeWidth={2} aria-hidden />
+                            Download
+                          </button>
+                        </td>
+                      </motion.tr>
+                    ))}
                   </tbody>
                 </table>
               </motion.div>
             </AnimatePresence>
 
-            {/* Commissions Pagination Footer */}
+            </div>{/* end invoices scrollable area */}
+
             <footer style={{
               height: '68px',
               padding: '0 24px',
@@ -3412,427 +3145,365 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               borderTop: `1px solid ${colors.border}`,
-              marginTop: 'auto',
-              backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'rgba(255, 255, 255, 1)'
+              backgroundColor: isDarkMode ? colors.bg : '#ffffff'
             }}>
-              <span style={{
-                fontSize: '14px',
-                color: colors.textSecondary
-              }}>Showing {commissionsStartItem} to {commissionsEndItem} of {commissionsTotalItems} entries</span>
-              <div style={{
-                display: 'flex',
-              gap: '4px'
-            }}>
-                <button onClick={handleCommissionsPrevious} disabled={commissionsPage === 1} style={{
-                  padding: '6px 12px',
-                  border: `1px solid ${colors.border}`,
+              <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif', fontWeight: 400, lineHeight: '20px' }}>
+                Showing {currentInvoicesData.length} of {invoicesTotalItems} entries
+              </span>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <button type="button" onClick={handleInvoicesPrevious} disabled={invoicesPage === 1} style={{
+                  padding: '4px 6px',
+                  border: 'none',
                   borderRadius: '8px',
-                  background: 'transparent',
-                  cursor: commissionsPage === 1 ? 'not-allowed' : 'pointer',
+                  background: isDarkMode ? 'rgba(39, 39, 42, 1)' : colors.white,
+                  boxShadow: '0px 1px 2px 0px rgba(0, 0, 0, 0.05)',
+                  cursor: invoicesPage === 1 ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  opacity: commissionsPage === 1 ? 0.5 : 1
+                  opacity: invoicesPage === 1 ? 0.5 : 1
                 }}>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/01c076b6-3528-475d-af10-7b71b96e0863.svg" style={{
-                    width: '16px'
-                  }} />
-                  <span style={{
-                    color: colors.textPrimary,
-                    fontSize: '14px',
-                    fontWeight: 500
-                  }}>Previous</span>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/01c076b6-3528-475d-af10-7b71b96e0863.svg" alt="" style={{ width: '16px' }} />
+                  <span style={{ color: colors.textPrimary, fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif' }}>Previous</span>
                 </button>
-                {getCommissionsPageNumbers().map(page => <button key={page} onClick={() => handleCommissionsPageClick(page)} style={{
-                  width: '28px',
-                  height: '28px',
-                  border: page === commissionsPage ? (isDarkMode ? '1px solid rgba(115, 115, 115, 1)' : `1px solid ${colors.accent}`) : 'none',
+                {getInvoicesPageNumbers().map((page, i) => (
+                  <button
+                    type="button"
+                    key={`ip-${page}-${i}`}
+                    onClick={() => handleInvoicesPageClick(page)}
+                    disabled={page === -1}
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      border: page === invoicesPage ? (isDarkMode ? '1px solid rgba(115, 115, 115, 1)' : `1px solid ${colors.paginationBlue}`) : 'none',
+                      borderRadius: '8px',
+                      cursor: page === -1 ? 'default' : 'pointer',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      fontFamily: '"Geist", sans-serif',
+                      backgroundColor: page === invoicesPage ? (isDarkMode ? 'rgba(82, 82, 91, 1)' : colors.paginationBlueBg) : 'transparent',
+                      color: page === invoicesPage ? (isDarkMode ? '#FFFFFF' : colors.paginationBlue) : colors.textPrimary
+                    }}
+                  >
+                    {page === -1 ? '...' : page}
+                  </button>
+                ))}
+                <button type="button" onClick={handleInvoicesNext} disabled={invoicesPage === invoicesTotalPages} style={{
+                  padding: '4px 6px',
+                  border: 'none',
                   borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-              fontWeight: 500,
-                  backgroundColor: page === commissionsPage ? (isDarkMode ? 'rgba(82, 82, 91, 1)' : 'rgba(237, 243, 255, 1)') : 'transparent',
-                  color: page === commissionsPage ? (isDarkMode ? '#FFFFFF' : colors.accent) : colors.textPrimary
-                }}>
-                  {page === -1 ? '...' : page}
-                </button>)}
-                <button onClick={handleCommissionsNext} disabled={commissionsPage === commissionsTotalPages} style={{
-                  padding: '6px 12px',
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '8px',
-                  background: 'transparent',
-                  cursor: commissionsPage === commissionsTotalPages ? 'not-allowed' : 'pointer',
+                  background: isDarkMode ? 'rgba(39, 39, 42, 1)' : colors.white,
+                  boxShadow: '0px 1px 2px 0px rgba(0, 0, 0, 0.05)',
+                  cursor: invoicesPage === invoicesTotalPages ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  opacity: commissionsPage === commissionsTotalPages ? 0.5 : 1
+                  opacity: invoicesPage === invoicesTotalPages ? 0.5 : 1
                 }}>
-                  <span style={{
-              color: colors.textPrimary,
-                    fontSize: '14px',
-                    fontWeight: 500
-                  }}>Next</span>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/607c4c87-4637-410f-bdea-5d4899aac524.svg" style={{
-                    width: '16px'
-                  }} />
+                  <span style={{ color: colors.textPrimary, fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif' }}>Next</span>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/607c4c87-4637-410f-bdea-5d4899aac524.svg" alt="" style={{ width: '16px' }} />
                 </button>
               </div>
             </footer>
           </>
         ) : activeNavigation === 'Campaigns' ? (
-          <>
             <PageSection pageKey="Campaigns">
-            {/* Campaigns Calendar — Untitled UI */}
-            <div className="flex flex-1 overflow-hidden min-w-0 max-w-full font-sans antialiased h-full">
-              {/* Left: Calendar */}
-              <div className="flex flex-1 flex-col overflow-hidden bg-background min-w-0">
-                {/* Header bar */}
-                <div className="flex items-center justify-between h-14 px-6 border-b border-border shrink-0">
-                  {/* Left: Page title with city dropdown */}
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-lg font-semibold text-foreground tracking-tight">Campaigns in</span>
-                    <Select value={campaignCityFilter} onValueChange={(value) => setCampaignCityFilter(value)}>
-                      <SelectTrigger className="border-none shadow-none text-lg font-semibold text-blue-600 gap-1 px-1 h-auto focus-visible:ring-0">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {campaignCities.map(city => (
-                          <SelectItem key={city} value={city}>{city}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Right: month + controls */}
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-foreground" style={{ fontFamily: '"Geist Mono", monospace' }}>
-                      {calendarMonthNames[campaignCalendarMonth]} {campaignCalendarYear}
-                    </span>
-                    {/* Nav: < Today > */}
-                    <div className="flex">
-                      <Button variant="outline" size="icon" onClick={() => navigateCalendar(-1)} className="rounded-r-none">
-                        <ChevronLeft className="size-5" />
-                      </Button>
-                      <Button variant="outline" onClick={goToToday} className="rounded-none border-x-0 px-4 font-semibold">
-                        Today
-                      </Button>
-                      <Button variant="outline" size="icon" onClick={() => navigateCalendar(1)} className="rounded-l-none">
-                        <ChevronRight className="size-5" />
-                      </Button>
-                    </div>
-
-                    {/* View mode dropdown */}
-                    <Select value={calendarViewMode} onValueChange={(value: 'month' | 'week' | 'day') => setCalendarViewMode(value)}>
-                      <SelectTrigger className="w-[140px] font-semibold">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="month">Month view</SelectItem>
-                        <SelectItem value="week">Week view</SelectItem>
-                        <SelectItem value="day">Day view</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Button
-                      className="rounded-[10px] font-medium text-sm text-white tracking-[-0.084px] border border-white/12 shadow-[0px_1px_2px_0px_rgba(14,18,27,0.24),0px_0px_0px_1px_var(--cta-primary-ring)] hover:brightness-110"
-                      style={{ backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 100%), linear-gradient(90deg, var(--cta-primary) 0%, var(--cta-primary) 100%)' }}
+            <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden font-sans antialiased">
+                <header className="bg-sidebar flex h-14 w-full min-w-0 shrink-0 items-center justify-between gap-4 border-b border-border px-6">
+                  <div className="flex min-w-0 items-center gap-4">
+                    <img
+                      src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg"
+                      alt=""
+                      className="size-5 shrink-0 cursor-pointer"
+                      onClick={() => setActiveNavigation('Insights')}
+                    />
+                    <div className="h-4 w-px shrink-0 bg-border" aria-hidden />
+                    <span
+                      className="truncate text-sm font-normal uppercase text-foreground"
+                      style={{ fontFamily: '"Geist Mono", monospace' }}
                     >
-                      <Plus className="size-5" />
-                      Add event
-                    </Button>
+                      Campaign Calendar
+                    </span>
                   </div>
-                </div>
+                  <div className="flex shrink-0 items-center gap-4">
+                    {/* Month navigation group */}
+                    <div className="inline-flex items-stretch shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => navigateCalendar(-1)}
+                        className="bg-background hover:bg-accent/60 flex items-center justify-center border border-input p-2 rounded-l-[10px] text-foreground transition-colors"
+                        style={{ boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)' }}
+                        aria-label="Previous month"
+                      >
+                        <ChevronLeft className="size-4" strokeWidth={2} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={goToToday}
+                        className="bg-background hover:bg-accent/60 flex items-center justify-center border border-border px-3 py-1.5"
+                        style={{ boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)' }}
+                      >
+                        <span className="select-none whitespace-nowrap text-center text-sm font-medium leading-none text-foreground">
+                          <span style={{ fontFamily: '"Geist", sans-serif' }}>{calendarMonthNames[campaignCalendarMonth]} </span>
+                          <span style={{ fontFamily: '"Geist Mono", monospace' }}>{campaignCalendarYear}</span>
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateCalendar(1)}
+                        className="bg-background hover:bg-accent/60 flex items-center justify-center border border-input p-2 rounded-r-[10px] text-foreground transition-colors"
+                        style={{ boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)' }}
+                        aria-label="Next month"
+                      >
+                        <ChevronRight className="size-4" strokeWidth={2} />
+                      </button>
+                    </div>
+                    {/* Month View dropdown */}
+                    <button
+                      type="button"
+                      className="bg-background hover:bg-accent/60 flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors"
+                      style={{ boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)', fontFamily: '"Geist", sans-serif' }}
+                    >
+                      Month View
+                      <ChevronDown className="size-4 text-foreground" strokeWidth={2} />
+                    </button>
+                    {/* Create Campaign — fancy gradient button */}
+                    <button
+                      type="button"
+                      className="flex shrink-0 items-center gap-1 overflow-hidden rounded-[10px] px-5 py-1.5 text-sm font-medium text-white transition-colors hover:opacity-90"
+                      style={{
+                        backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 100%), linear-gradient(90deg, #0c63f8 0%, #0c63f8 100%)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        boxShadow: '0px 1px 2px 0px rgba(14,18,27,0.24), 0px 0px 0px 1px #1b6df8',
+                        letterSpacing: '-0.084px',
+                        fontFamily: '"Inter", sans-serif'
+                      }}
+                    >
+                      <Plus className="size-5" strokeWidth={2} />
+                      <span className="px-1">Create Campaign</span>
+                    </button>
+                  </div>
+                </header>
 
-                {/* ========== MONTH VIEW ========== */}
-                {calendarViewMode === 'month' && (
+                <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background">
+                {(() => {
+                  const allDays = getCalendarDays(campaignCalendarMonth, campaignCalendarYear);
+                  const totalWeeks = Math.ceil(allDays.length / 7);
+                  return (
                   <>
-                    <div className="grid grid-cols-7 border-b border-border shrink-0 bg-muted">
+                    <div className="bg-muted/40 grid shrink-0 grid-cols-7 border-b border-border">
                       {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
-                        <div key={day} className="py-2.5 text-xs font-medium text-muted-foreground text-center uppercase tracking-widest" style={{
-                          borderRight: i < 6 ? '1px solid var(--color-border)' : 'none',
-                          fontFamily: '"Geist Mono", monospace'
-                        }}>{day}</div>
+                        <div
+                          key={day}
+                          className={`flex items-center justify-center border-border p-2 text-xs font-medium text-muted-foreground ${i < 6 ? 'border-r' : ''}`}
+                          style={{ fontFamily: '"Geist", sans-serif' }}
+                        >
+                          {day}
+                        </div>
                       ))}
                     </div>
-                    <div className="flex flex-col flex-1 overflow-hidden">
-                      {(() => {
-                        const allDays = getCalendarDays(campaignCalendarMonth, campaignCalendarYear);
-                        const totalWeeks = Math.ceil(allDays.length / 7);
-                        return Array.from({ length: totalWeeks }).map((_, weekIndex) => {
-                          const weekDays = allDays.slice(weekIndex * 7, (weekIndex + 1) * 7);
-                          return (
-                            <div key={weekIndex} className="grid grid-cols-7 border-b border-border flex-1 min-h-0">
-                              {weekDays.map((dayInfo, colIdx) => {
-                                const today = isToday(dayInfo.date);
-                                const dayEvents = getEventsForDate(dayInfo.date);
-                                const maxShow = 3;
-                                const visibleEvents = dayEvents.slice(0, maxShow);
-                                const moreCount = dayEvents.length - maxShow;
+                    <div
+                      className="min-h-0 flex-1 overflow-hidden"
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+                        gridTemplateRows: `repeat(${totalWeeks}, minmax(0, 1fr))`
+                      }}
+                    >
+                      {allDays.map((dayInfo, idx) => {
+                        const row = Math.floor(idx / 7);
+                        const colIdx = idx % 7;
+                        const today = isToday(dayInfo.date);
+                        const dayEvents = getEventsForDate(dayInfo.date);
+                        const maxShow = 3;
+                        const visibleEvents = dayEvents.slice(0, maxShow);
+                        const moreCount = dayEvents.length - maxShow;
+                        return (
+                          <div
+                            key={idx}
+                            className={`flex min-h-0 min-w-0 flex-col gap-1 overflow-hidden border-border p-2 ${dayInfo.isCurrentMonth ? 'bg-card' : 'bg-muted'} ${colIdx < 6 ? 'border-r' : ''} ${row < totalWeeks - 1 ? 'border-b' : ''}`}
+                          >
+                            <div className="shrink-0">
+                              <div className="relative h-6 w-full shrink-0">
+                                {today ? (
+                                  <span className="absolute left-0 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground" style={{ fontFamily: '"Geist Mono", monospace' }}>{dayInfo.day}</span>
+                                ) : (
+                                  <span className={`absolute left-1 top-1/2 -translate-y-1/2 text-xs font-medium ${dayInfo.isCurrentMonth ? 'text-foreground' : 'text-muted-foreground opacity-50'}`} style={{ fontFamily: '"Geist Mono", monospace' }}>{dayInfo.day}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '4px',
+                                flex: 1,
+                                minHeight: 0,
+                                minWidth: 0,
+                                width: '100%',
+                                overflow: 'hidden'
+                              }}
+                            >
+                              {visibleEvents.map((evt) => {
+                                const cs = getEventColorStyles(evt.color);
                                 return (
-                                  <div key={colIdx} onClick={() => { setCalendarSelectedDate(dayInfo.date); setCalendarViewMode('day'); }} className="flex flex-col cursor-pointer overflow-hidden min-w-0 p-1 bg-background" style={{
-                                    borderRight: colIdx < 6 ? '1px solid var(--color-border)' : 'none'
+                                  <div key={evt.id} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    minHeight: 0,
+                                    flexShrink: 1,
+                                    background: cs.bg,
+                                    border: `1px solid ${cs.border}`,
+                                    borderRadius: '6px',
+                                    padding: '4px 8px',
+                                    overflow: 'hidden',
+                                    gap: '2px',
+                                    width: '100%',
+                                    boxSizing: 'border-box'
                                   }}>
-                                    {/* Day number */}
-                                    <div className="px-1 pt-0.5 pb-1.5 flex justify-start">
-                                      {today ? (
-                                        <span className="text-sm font-semibold text-primary-foreground bg-primary rounded-full w-7 h-7 flex items-center justify-center" style={{ fontFamily: '"Geist Mono", monospace' }}>{dayInfo.day}</span>
-                                      ) : (
-                                        <span className={`text-sm w-7 h-7 flex items-center justify-center ${dayInfo.isCurrentMonth ? 'text-foreground' : 'text-muted-foreground/50'}`} style={{ fontFamily: '"Geist Mono", monospace' }}>{dayInfo.day}</span>
-                                      )}
-                                    </div>
-                                    {/* Events */}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, width: '100%', minWidth: 0 }}>
-                                      {visibleEvents.map((evt) => {
-                                        const cs = getEventColorStyles(evt.color);
-                                        return (
-                                          <div key={evt.id} style={{
-                                            display: 'flex', alignItems: 'center',
-                                            background: cs.bg,
-                                            border: `1px solid ${cs.border}`,
-                                            borderRadius: '6px',
-                                            padding: '4px 8px',
-                                            overflow: 'hidden', gap: '2px',
-                                            width: '100%', boxSizing: 'border-box'
-                                          }}>
-                                            {evt.dot && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: cs.text, flexShrink: 0, marginRight: '2px' }} />}
-                                            <span style={{
-                                              fontSize: '12px', fontWeight: 600, color: cs.text,
-                                              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                              lineHeight: '18px', flex: 1, minWidth: 0
-                                            }}>{evt.title}</span>
-                                            <span style={{
-                                              fontSize: '12px', fontWeight: 400, color: cs.time,
-                                              whiteSpace: 'nowrap', flexShrink: 0,
-                                              lineHeight: '18px'
-                                            }}>{evt.time}</span>
-                                          </div>
-                                        );
-                                      })}
-                                      {moreCount > 0 && (
-                                        <span className="text-xs font-medium text-muted-foreground cursor-pointer pl-1">{moreCount} more...</span>
-                                      )}
-                                    </div>
+                                    {evt.dot && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: cs.text, flexShrink: 0, marginRight: '2px' }} />}
+                                    <span style={{
+                                      fontSize: '12px',
+                                      fontWeight: 600,
+                                      color: cs.text,
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      lineHeight: '16px',
+                                      flex: 1,
+                                      minWidth: 0,
+                                      fontFamily: '"Geist", sans-serif',
+                                    }}>{evt.title}</span>
+                                    <span style={{
+                                      fontSize: '12px',
+                                      fontWeight: 400,
+                                      color: cs.time,
+                                      whiteSpace: 'nowrap',
+                                      flexShrink: 0,
+                                      lineHeight: '16px',
+                                      fontFamily: '"Geist", sans-serif',
+                                    }}>{evt.time}</span>
                                   </div>
                                 );
                               })}
-                            </div>
-                          );
-                        });
-                      })()}
-                    </div>
-                  </>
-                )}
-
-                {/* ========== WEEK VIEW ========== */}
-                {calendarViewMode === 'week' && (() => {
-                  const weekDays = getWeekDays(calendarSelectedDate);
-                  const dayNamesShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                  return (
-                    <>
-                      {/* Day column headers with dates */}
-                      <div className="grid border-b border-border bg-muted" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
-                        <div className="border-r border-border" />
-                        {weekDays.map((d, i) => {
-                          const today = isToday(d);
-                          return (
-                            <div key={i} onClick={() => { setCalendarSelectedDate(d); setCalendarViewMode('day'); }} className="py-2.5 text-center cursor-pointer" style={{
-                              borderRight: i < 6 ? '1px solid var(--color-border)' : 'none'
-                            }}>
-                              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide" style={{ fontFamily: '"Geist Mono", monospace' }}>
-                                {dayNamesShort[i]}
-                              </span>
-                              {' '}
-                              {today ? (
-                                <span className="text-sm font-semibold text-primary-foreground bg-primary rounded-full w-[26px] h-[26px] inline-flex items-center justify-center" style={{ fontFamily: '"Geist Mono", monospace' }}>{d.getDate()}</span>
-                              ) : (
-                                <span className="text-sm font-medium text-foreground" style={{ fontFamily: '"Geist Mono", monospace' }}>{d.getDate()}</span>
+                              {moreCount > 0 && (
+                                <span className="shrink-0 cursor-pointer pl-0.5 text-xs font-medium leading-4 text-muted-foreground">{moreCount} more...</span>
                               )}
                             </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Time grid */}
-                      <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
-                        {calendarHours.map(hour => (
-                          <div key={hour} className="grid min-h-16 border-b border-border/50" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
-                            {/* Time label */}
-                            <div className="pt-1 pr-2 text-right text-xs text-muted-foreground border-r border-border">{formatHour(hour)}</div>
-
-                            {/* 7 day columns */}
-                            {weekDays.map((d, colIdx) => {
-                              const dayEvents = getEventsForDate(d);
-                              const hourEvents = dayEvents.filter(evt => {
-                                const h = parseTimeToHour(evt.time);
-                                return Math.floor(h) === hour;
-                              });
-                              return (
-                                <div key={colIdx} className="p-0.5 relative" style={{
-                                  borderRight: colIdx < 6 ? '1px solid var(--color-border)' : 'none'
-                                }}>
-                                  {hourEvents.map(evt => {
-                                    const cs = getEventColorStyles(evt.color);
-                                    return (
-                                      <div key={evt.id} style={{
-                                        background: cs.bg, border: `1px solid ${cs.border}`,
-                                        borderRadius: '6px', padding: '6px 8px',
-                                        marginBottom: '4px', cursor: 'pointer',
-                                        minHeight: '44px', position: 'relative'
-                                      }}>
-                                        {evt.dot && <span style={{ position: 'absolute', top: '8px', right: '8px', width: '6px', height: '6px', borderRadius: '50%', background: cs.text }} />}
-                                        <div style={{ fontSize: '12px', fontWeight: 600, color: cs.text, lineHeight: '18px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{evt.title}</div>
-                                        <div style={{ fontSize: '12px', fontWeight: 400, color: cs.time, lineHeight: '18px' }}>{evt.time}</div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              );
-                            })}
                           </div>
-                        ))}
-
-                        {/* Current time indicator */}
-                        {(() => {
-                          const now = new Date();
-                          const currentHour = now.getHours() + now.getMinutes() / 60;
-                          if (currentHour >= calendarHours[0] && currentHour <= calendarHours[calendarHours.length - 1] + 1) {
-                            const topPx = (currentHour - calendarHours[0]) * 64;
-                            const todayIdx = weekDays.findIndex(d => isToday(d));
-                            if (todayIdx >= 0) {
-                              return (
-                                <div className="absolute h-0.5 bg-ring z-5 pointer-events-none" style={{ top: `${topPx}px`, left: '60px', right: 0 }}>
-                                  <div className="absolute -left-[5px] -top-1 w-2.5 h-2.5 rounded-full bg-ring" />
-                                  {/* Time label */}
-                                  <span className="absolute -left-[58px] -top-2 text-xs text-ring font-medium w-[50px] text-right">
-                                    {now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase().replace(' ', ' ')}
-                                  </span>
-                                </div>
-                              );
-                            }
-                          }
-                          return null;
-                        })()}
-                      </div>
-                    </>
-                  );
-                })()}
-
-                {/* ========== DAY VIEW ========== */}
-                {calendarViewMode === 'day' && (() => {
-                  const dayEvents = getEventsForDate(calendarSelectedDate);
-                  return (
-                    <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
-                      {calendarHours.map(hour => (
-                        <div key={hour} className="grid min-h-[72px] border-b border-border/50" style={{ gridTemplateColumns: '60px 1fr' }}>
-                          <div className="pt-1 pr-2 text-right text-xs text-muted-foreground border-r border-border">{formatHour(hour)}</div>
-                          <div style={{ padding: '2px 8px', position: 'relative' }}>
-                            {dayEvents.filter(evt => Math.floor(parseTimeToHour(evt.time)) === hour).map(evt => {
-                              const cs = getEventColorStyles(evt.color);
-                              return (
-                                <div key={evt.id} style={{
-                                  background: cs.bg, border: `1px solid ${cs.border}`,
-                                  borderRadius: '6px', padding: '10px 14px',
-                                  marginBottom: '4px', cursor: 'pointer',
-                                  minHeight: '60px', position: 'relative'
-                                }}>
-                                  {evt.dot && <span style={{ position: 'absolute', top: '10px', right: '12px', width: '7px', height: '7px', borderRadius: '50%', background: cs.text }} />}
-                                  <div style={{ fontSize: '14px', fontWeight: 600, color: cs.text, lineHeight: '20px' }}>{evt.title}</div>
-                                  <div style={{ fontSize: '13px', fontWeight: 400, color: cs.time, lineHeight: '20px' }}>{evt.time}</div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Current time indicator */}
-                      {isToday(calendarSelectedDate) && (() => {
-                        const now = new Date();
-                        const currentHour = now.getHours() + now.getMinutes() / 60;
-                        if (currentHour >= calendarHours[0] && currentHour <= calendarHours[calendarHours.length - 1] + 1) {
-                          const topPx = (currentHour - calendarHours[0]) * 72;
-                          return (
-                            <div className="absolute h-0.5 bg-ring z-5 pointer-events-none" style={{ top: `${topPx}px`, left: '60px', right: 0 }}>
-                              <div className="absolute -left-[5px] -top-1 w-2.5 h-2.5 rounded-full bg-ring" />
-                              <span className="absolute -left-[58px] -top-2 text-xs text-ring font-medium w-[50px] text-right">
-                                {now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase()}
-                              </span>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
+                        );
+                      })}
                     </div>
+                  </>
                   );
                 })()}
               </div>
 
               {/* Right Sidebar */}
-              <div className="w-[280px] border-l border-border flex flex-col bg-background shrink-0 overflow-hidden">
-                {/* Total Balance Card */}
-                <div className="m-4 p-5 pb-[18px] rounded-xl relative overflow-hidden" style={{ background: 'linear-gradient(180deg, var(--card-balance-from) 0%, var(--card-balance-to) 100%)', border: '1px solid var(--card-balance-border)' }}>
-                  <div className="absolute top-3.5 right-3.5 w-11 h-11 rounded-full flex items-center justify-center shadow-md" style={{ background: 'linear-gradient(135deg, var(--card-gold-from) 0%, var(--card-gold-to) 100%)' }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" fill="#fff" fillOpacity="0.3"/>
-                      <circle cx="12" cy="12" r="6" fill="#fff" fillOpacity="0.5"/>
-                    </svg>
+              <div className="flex h-full min-h-0 w-[289px] shrink-0 flex-col gap-4 overflow-y-auto overflow-x-hidden border-l border-border bg-background p-4">
+                {/* Total Balance — Figma */}
+                <div className="bg-card text-card-foreground border-border relative h-[166px] shrink-0 overflow-hidden rounded-2xl border shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08)]">
+                  {/* Blue gradient accent bar at top */}
+                  <div
+                    className="absolute -left-px -top-[7px] h-4 w-full"
+                    style={{ backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 100%), linear-gradient(90deg, #0c63f8 0%, #0c63f8 100%)' }}
+                  />
+                  {/* Shimmer sparkle */}
+                  <img
+                    src={figmaCampaignShimmer}
+                    alt=""
+                    className="absolute right-[10px] top-[-4px] size-[21px]"
+                    style={{ transform: 'rotate(11.58deg)' }}
+                    aria-hidden="true"
+                  />
+                  {/* Coin pair illustration — emoji fallback */}
+                  <div className="absolute right-[8px] top-[16px] flex items-center" aria-hidden="true" style={{ fontSize: '32px', lineHeight: 1 }}>
+                    <span style={{ marginRight: '-8px' }}>🪙</span>
+                    <span>🪙</span>
+                    <span style={{ fontSize: '14px', marginLeft: '2px', marginTop: '-12px' }}>✨</span>
                   </div>
-                  <span className="text-sm text-muted-foreground font-medium">Total Balance</span>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <div className="w-3.5 h-3.5 rounded-full" style={{ background: 'linear-gradient(135deg, var(--card-gold-from), var(--card-gold-to))' }} />
-                    <span className="text-3xl font-bold text-foreground tracking-tight leading-[38px]" style={{ fontFamily: '"Geist Mono", monospace' }}>121,345</span>
+                  <div className="absolute left-[15px] top-[25px] flex w-[219px] flex-col gap-4">
+                    <div className="flex flex-col gap-[7px]">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-medium text-foreground" style={{ fontFamily: '"Geist", sans-serif' }}>Total Balance</span>
+                          <div className="flex items-center">
+                            <img src={figmaCampaignCoin} alt="" className="size-4 shrink-0" />
+                            <span className="text-lg font-semibold leading-7 text-foreground" style={{ fontFamily: '"Geist", sans-serif' }}>
+                              121,345
+                            </span>
+                          </div>
+                        </div>
+                        {/* Dashed separator line */}
+                        <div className="w-full" style={{ borderTop: '1px dashed var(--border, #e5e5e5)' }} />
+                      </div>
+                      <p className="text-xs font-normal text-muted-foreground" style={{ fontFamily: '"Geist", sans-serif' }}>Last activity 26/09/24</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="flex w-fit items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-blue-500 shadow-sm hover:bg-accent/50"
+                      style={{ fontFamily: '"Geist", sans-serif' }}
+                    >
+                      See details
+                    </button>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1 mb-4">Last activity 26/09/24</p>
-                  <Button variant="outline" className="font-semibold">
-                    <Eye className="size-4" />
-                    See Details
-                  </Button>
                 </div>
 
-                {/* Launch Campaigns Card */}
-                <div className="mx-4 mb-4 p-6 rounded-xl text-white relative overflow-hidden flex-1" style={{ background: 'linear-gradient(135deg, var(--card-campaign-from) 0%, var(--card-campaign-mid) 40%, var(--card-campaign-to) 100%)' }}>
-                  <svg className="absolute top-[18px] right-[18px] opacity-40" width="20" height="20" viewBox="0 0 24 24" fill="white">
-                    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/>
-                  </svg>
-                  <h3 className="text-xl font-bold leading-7 mb-2 max-w-[200px] tracking-tight">Launch campaigns, promote your property</h3>
-                  <p className="text-sm opacity-80 leading-5 mb-5 max-w-[220px]">Drive bookings and boost visibility with tailored campaign launches.</p>
-                  <Button
-                    className="group rounded-[10px] font-medium text-sm text-white tracking-[-0.084px] border border-white/12 shadow-[0px_1px_2px_0px_rgba(14,18,27,0.24),0px_0px_0px_1px_var(--cta-primary-ring)] hover:brightness-110"
-                    style={{ backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 100%), linear-gradient(90deg, var(--cta-primary) 0%, var(--cta-primary) 100%)' }}
-                  >
-                    Request to book
-                    <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-                  </Button>
-
-                  <div style={{
-                    marginTop: '24px', background: 'rgba(255,255,255,0.12)',
-                    borderRadius: '12px', padding: '8px 12px',
-                    border: '1px solid rgba(255,255,255,0.12)'
-                  }}>
-                    {campaignTypes.map((ct, i) => (
-                      <div key={i} style={{
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                        padding: '10px 4px',
-                        borderBottom: i < campaignTypes.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none'
-                      }}>
-                        <div style={{
-                          width: '28px', height: '28px', borderRadius: '50%',
-                          background: 'rgba(255,255,255,0.15)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '14px', flexShrink: 0
-                        }}>{ct.icon}</div>
-                        <div>
-                          <div style={{ fontSize: '14px', fontWeight: 600, lineHeight: '20px' }}>{ct.name}</div>
-                          <div style={{ fontSize: '12px', opacity: 0.6, lineHeight: '18px' }}>{ct.duration}</div>
-                        </div>
-                      </div>
-                    ))}
+                {/* Launch campaigns — blue gradient + illustration */}
+                <div
+                  className="relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl"
+                  style={{
+                    backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 100%), linear-gradient(90deg, #0c63f8 0%, #0c63f8 100%)',
+                    border: '1px solid rgba(2,132,199,0.6)'
+                  }}
+                >
+                  {/* Stars pattern background */}
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute -left-[205px] -top-3 size-[500px] opacity-10"
+                    style={{
+                      backgroundImage: `url('${figmaCampaignStarsBg}')`,
+                      backgroundSize: '500px 500px',
+                    }}
+                  />
+                  {/* Star stroke decoration */}
+                  <img
+                    src={figmaCampaignStarStroke}
+                    alt=""
+                    className="absolute right-[2px] top-[22px] size-[22px]"
+                    style={{ transform: 'rotate(77.32deg)' }}
+                    aria-hidden="true"
+                  />
+                  <div className="relative z-[1] mx-auto flex w-[225px] flex-col items-center gap-[21px] pt-[19px]">
+                    <div className="flex w-full flex-col items-end gap-2">
+                      <h3 className="w-full text-lg font-bold leading-7 text-white" style={{ fontFamily: '"Geist", sans-serif' }}>
+                        Launch campaigns, promote your property
+                      </h3>
+                      <p className="w-full text-xs font-normal leading-4 text-[#e5e7eb]" style={{ fontFamily: '"Geist", sans-serif' }}>
+                        Drive bookings and boost visibility with tailored campaign launches.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-center rounded-lg border border-border bg-background px-6 py-2.5 text-sm font-medium text-blue-500 shadow-sm hover:bg-accent"
+                      style={{ fontFamily: '"Geist", sans-serif' }}
+                    >
+                      Create Campaign
+                    </button>
+                  </div>
+                  <div className="relative z-[1] mt-auto w-full">
+                    <img
+                      src={figmaCampaignPackIllustration}
+                      alt=""
+                      className="h-[250px] w-full object-cover object-top"
+                    />
                   </div>
                 </div>
               </div>
             </div>
+            </div>
             </PageSection>
-          </>
         ) : activeNavigation === 'Reviews' ? (
           <>
             {/* Reviews Header */}
@@ -3847,13 +3518,12 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               flexShrink: 0
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg" style={{ width: '20px' }} alt="back" />
-                <div style={{ height: '20px', borderLeft: `1px solid ${colors.border}` }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist Mono"', textTransform: 'uppercase' }}>Dashboard</span>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/42fc4aca-b2d6-4358-bd46-3ec69e3c9773.svg" style={{ width: '14px' }} />
-                  <span style={{ fontSize: '14px', color: colors.textPrimary, fontFamily: '"Geist Mono"', textTransform: 'uppercase' }}>Reviews</span>
-                </div>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ cursor: 'pointer' }} onClick={() => setActiveNavigation('Insights')}>
+                  <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                <div style={{ height: '16px', borderLeft: `1px solid ${colors.border}` }} />
+                <span style={{ fontSize: '14px', color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', fontWeight: 400, textTransform: 'uppercase', letterSpacing: '0.02em' }}>Reviews</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <button style={{
@@ -3873,38 +3543,57 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               padding: '16px 24px',
               display: 'flex',
               alignItems: 'stretch',
+              gap: '16px',
               backgroundColor: colors.bg,
               borderBottom: `1px solid ${colors.border}`,
             }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Average Rating */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', height: '120px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Average Rating</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <img src="/assets/star.svg" alt="star" style={{ width: '20px', height: '20px' }} />
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif', lineHeight: '20px' }}>Average Rating</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1" strokeLinejoin="round"/>
+                    </svg>
                     <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>4.7</span>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>-3.2%</span>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14 6L6 14M6 14H11M6 14V9" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                    {/* Red down-triangle */}
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ alignSelf: 'center' }}>
+                      <path d="M4 6l4 4 4-4" fill="#dc2626" />
+                    </svg>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#dc2626', fontFamily: '"Geist Mono", monospace', lineHeight: '22px' }}>16%</span>
+                  </div>
+                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#5c5c5c', fontFamily: '"Geist", sans-serif', lineHeight: '16px', paddingBottom: '2px' }}>vs last week</span>
                 </div>
                 <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#9333ea', width: '100%' }} />
               </div>
 
-              <div style={{ width: '1px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}`, margin: '0 24px' }} />
+              {/* Dashed divider */}
+              <div style={{ width: '0px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}` }} />
 
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Total Ratings */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', height: '120px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Total Ratings</span>
-                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>25</span>
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif', lineHeight: '20px' }}>Total Ratings</span>
+                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>12</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>-6.4%</span>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14 6L6 14M6 14H11M6 14V9" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                    {/* Green up-triangle */}
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ alignSelf: 'center' }}>
+                      <path d="M4 10l4-4 4 4" fill="#16a34a" />
+                    </svg>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#16a34a', fontFamily: '"Geist Mono", monospace', lineHeight: '22px' }}>15%</span>
+                  </div>
+                  <span style={{ fontSize: '12px', fontWeight: 500, color: '#5c5c5c', fontFamily: '"Geist", sans-serif', lineHeight: '16px', paddingBottom: '2px' }}>vs last week</span>
                 </div>
                 <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#22d3ee', width: '100%' }} />
               </div>
 
+              {/* Empty space for 3rd/4th hidden cards */}
               <div style={{ flex: 3 }} />
             </div>
 
@@ -5323,12 +5012,10 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               flexShrink: 0
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg" style={{ width: '20px' }} alt="back" />
+                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg" style={{ width: '20px', cursor: 'pointer' }} alt="" onClick={() => setActiveNavigation('Insights')} />
                 <div style={{ height: '20px', borderLeft: `1px solid ${colors.border}` }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist Mono"', textTransform: 'uppercase' }}>Dashboard</span>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/42fc4aca-b2d6-4358-bd46-3ec69e3c9773.svg" style={{ width: '14px' }} />
-                  <span style={{ fontSize: '14px', color: colors.textPrimary, fontFamily: '"Geist Mono"', textTransform: 'uppercase' }}>Bookings</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '14px', color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', fontWeight: 400, textTransform: 'uppercase', lineHeight: '20px' }}>Bookings</span>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -5343,90 +5030,96 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               </div>
             </header>
 
-            {/* Bookings Stats Banner */}
+            {/* Scrollable area: stats scroll away, filter + thead stick */}
+            <div style={{ flex: 1, overflow: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+
+            {/* Bookings Stats Banner — scrolls away */}
             <div style={{
               padding: '16px 24px',
               display: 'flex',
               alignItems: 'stretch',
+              gap: '16px',
               backgroundColor: colors.bg,
               borderBottom: `1px solid ${colors.border}`,
+              flexShrink: 0,
             }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Total Bookings</span>
-                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>4,849</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>+12.5%</span>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 14L14 6M14 6H9M14 6V11" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </div>
-                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#9333ea', width: '100%' }} />
-              </div>
-              <div style={{ width: '1px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}`, margin: '0 24px' }} />
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Processing</span>
-                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>574</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>-3.2%</span>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M14 6L6 14M6 14H11M6 14V9" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </div>
-                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#22d3ee', width: '100%' }} />
-              </div>
-              <div style={{ width: '1px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}`, margin: '0 24px' }} />
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>Invoiced</span>
-                  <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>243</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>+0.8%</span>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 14L14 6M14 6H9M14 6V11" stroke="#22c55e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </div>
-                <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: '#9333ea', width: '100%' }} />
-              </div>
-              <div style={{ width: '1px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}`, margin: '0 24px' }} />
-              <div style={{ flex: 1 }} />
+              {[
+                { label: 'Total Bookings', value: '4,849', delta: '3%', up: false, bar: '#9333ea' },
+                { label: 'Processing', value: '574', delta: '6%', up: false, bar: '#22d3ee' },
+                { label: 'Invoiced', value: '243', delta: '1%', up: true, bar: '#9333ea' },
+              ].map((kpi, ki) => (
+                <React.Fragment key={kpi.label}>
+                  {ki > 0 && (
+                    <div style={{ width: '0px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}` }} />
+                  )}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', height: '120px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                      <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif', lineHeight: '20px' }}>{kpi.label}</span>
+                      <span style={{ fontSize: '24px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist Mono", monospace', lineHeight: '28px' }}>{kpi.value}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ alignSelf: 'center' }}>
+                          {kpi.up
+                            ? <path d="M4 10l4-4 4 4" fill="#16a34a" />
+                            : <path d="M4 6l4 4 4-4" fill="#dc2626" />}
+                        </svg>
+                        <span style={{ fontSize: '14px', fontWeight: 600, color: kpi.up ? '#16a34a' : '#dc2626', fontFamily: '"Geist Mono", monospace', lineHeight: '22px' }}>{kpi.delta}</span>
+                      </div>
+                      <span style={{ fontSize: '12px', fontWeight: 500, color: '#5c5c5c', fontFamily: '"Geist", sans-serif', lineHeight: '16px', paddingBottom: '2px' }}>vs last week</span>
+                    </div>
+                    <div style={{ height: '4px', borderRadius: '1.5px', backgroundColor: kpi.bar, width: '100%' }} />
+                  </div>
+                </React.Fragment>
+              ))}
             </div>
 
 
-            {/* Bookings Filter / Search Bar */}
+            {/* Bookings Filter / Search Bar — sticky */}
             <div style={{
-              height: '68px',
-              padding: '0 24px',
+              minHeight: '68px',
+              padding: '16px 24px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               borderBottom: `1px solid ${colors.border}`,
-              backgroundColor: colors.bg
+              backgroundColor: colors.bg,
+              gap: '16px',
+              flexWrap: 'wrap',
+              position: 'sticky',
+              top: 0,
+              zIndex: 11,
+              flexShrink: 0,
             }}>
               <div style={{
                 width: '320px',
-                height: '36px',
+                maxWidth: '100%',
+                minHeight: '36px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                padding: '0 8px',
+                padding: '6px 8px 6px 8px',
                 border: `1px solid ${colors.border}`,
                 borderRadius: '8px',
                 backgroundColor: colors.bg,
                 boxShadow: '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
               }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
                 </svg>
                 <input
                   type="text"
-                  placeholder="Booking ID"
+                  placeholder="Student Name or Booking Id"
                   style={{
                     flex: 1,
+                    minWidth: 0,
                     border: 'none',
                     outline: 'none',
                     fontSize: '14px',
                     color: colors.textPrimary,
                     backgroundColor: 'transparent',
-                    fontFamily: '"Geist", sans-serif'
+                    fontFamily: '"Geist", sans-serif',
+                    fontWeight: 400
                   }}
                 />
                 <div style={{
@@ -5441,67 +5134,75 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                   textTransform: 'uppercase'
                 }}>⌘K</div>
               </div>
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <div style={{ position: 'relative' }}>
                   <select style={{
-                    padding: '6px 32px 6px 12px',
+                    padding: '6px 36px 6px 12px',
                     border: `1px solid ${colors.border}`,
                     borderRadius: '8px',
-                    background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-                    color: colors.textPrimary,
+                    background: isDarkMode ? 'rgba(10, 10, 10, 1)' : colors.white,
+                    color: isDarkMode ? colors.textPrimary : colors.sidebarForeground,
                     fontSize: '14px',
                     fontWeight: 500,
                     fontFamily: '"Geist", sans-serif',
                     cursor: 'pointer',
                     appearance: 'none',
                     outline: 'none',
-                    minWidth: '130px'
+                    minWidth: '94px'
                   }}>
                     <option value="">Status</option>
                     <option value="Confirmed">Confirmed</option>
                     <option value="Processing">Processing</option>
                     <option value="Cancelled">Cancelled</option>
                   </select>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" alt="" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '20px', pointerEvents: 'none' }} />
                 </div>
                 <div style={{ position: 'relative' }}>
                   <select style={{
-                    padding: '6px 32px 6px 12px',
+                    padding: '6px 36px 6px 12px',
                     border: `1px solid ${colors.border}`,
                     borderRadius: '8px',
-                    background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-                    color: colors.textPrimary,
+                    background: isDarkMode ? 'rgba(10, 10, 10, 1)' : colors.white,
+                    color: isDarkMode ? colors.textPrimary : colors.sidebarForeground,
                     fontSize: '14px',
                     fontWeight: 500,
                     fontFamily: '"Geist", sans-serif',
                     cursor: 'pointer',
                     appearance: 'none',
                     outline: 'none',
-                    minWidth: '140px'
+                    minWidth: '167px'
                   }}>
-                    <option value="">Move In Date</option>
+                    <option value="">Listing</option>
                   </select>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" alt="" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '20px', pointerEvents: 'none' }} />
                 </div>
-                <div style={{ position: 'relative' }}>
-                  <select style={{
-                    padding: '6px 32px 6px 12px',
+                <button
+                  type="button"
+                  onClick={() => playClickSound()}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    height: '36px',
+                    padding: '8px 12px',
                     border: `1px solid ${colors.border}`,
                     borderRadius: '8px',
-                    background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-                    color: colors.textPrimary,
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    fontFamily: '"Geist", sans-serif',
+                    background: isDarkMode ? 'rgba(10, 10, 10, 1)' : colors.white,
+                    boxShadow: '0px 1px 2px 0px rgba(0, 0, 0, 0.05)',
                     cursor: 'pointer',
-                    appearance: 'none',
-                    outline: 'none',
-                    minWidth: '130px'
-                  }}>
-                    <option value="">Tenure</option>
-                  </select>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
-                </div>
+                    minWidth: '200px',
+                    fontSize: '14px',
+                    fontWeight: 400,
+                    fontFamily: '"Geist", sans-serif',
+                    color: colors.textSecondary
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <path d="M16 2v4M8 2v4M3 10h18" />
+                  </svg>
+                  <span style={{ flex: 1, textAlign: 'left' }}>Move-In date</span>
+                </button>
               </div>
             </div>
 
@@ -5513,22 +5214,22 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                style={{ flex: 1, overflowX: 'auto', minHeight: 0 }}
               >
                 <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-                  <thead>
+                  <thead style={{ position: 'sticky', top: '68px', zIndex: 10 }}>
                     <tr style={{
                       backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)',
                       borderBottom: `1px solid ${colors.border}`,
                       height: '42px'
                     }}>
-                      <th style={{ padding: '0 16px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Amber ID</th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Booking ID</th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Listing</th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Student Name</th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Status</th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Move In Date</th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Tenure</th>
+                      <th style={{ padding: '0 8px 0 24px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Amber ID</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Booking ID</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', verticalAlign: 'middle' }}>Student Name</th>
+                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Listing</th>
+                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Status</th>
+                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Created At</th>
+                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Move In Date</th>
+                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Tenure Length</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -5542,19 +5243,22 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDarkMode ? 'rgba(23, 23, 23, 0.6)' : 'rgba(250, 250, 250, 0.7)'; }}
                         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = colors.bg; }}
                       >
-                        <td style={{ padding: '0 16px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist Mono"' }}>{item.amberId}</td>
-                        <td style={{ padding: '0 8px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist Mono"' }}>{item.bookingId}</td>
-                        <td style={{ padding: '0 8px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif' }}>{item.listing}</td>
-                        <td style={{ padding: '0 8px', fontSize: '14px', color: colors.textPrimary, fontFamily: '"Geist", sans-serif' }}>{item.studentName}</td>
-                        <td style={{ padding: '0 8px' }}>{getStatusBadge(item.status)}</td>
-                        <td style={{ padding: '0 8px', fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist Mono"' }}>{item.moveInDate}</td>
-                        <td style={{ padding: '0 8px', fontSize: '14px', color: colors.textPrimary, fontFamily: '"Geist", sans-serif' }}>{item.tenure}</td>
+                        <td style={{ padding: '8px 8px 8px 24px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', lineHeight: '20px', verticalAlign: 'middle' }}>{item.amberId}</td>
+                        <td style={{ padding: '8px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', lineHeight: '20px', verticalAlign: 'middle' }}>{item.bookingId}</td>
+                        <td style={{ padding: '8px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', lineHeight: '20px', textAlign: 'left', verticalAlign: 'middle' }}>{item.studentName}</td>
+                        <td style={{ padding: '8px', fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', lineHeight: '20px', verticalAlign: 'middle' }}>{item.listing}</td>
+                        <td style={{ padding: '8px', textAlign: 'center', verticalAlign: 'middle' }}>{getStatusBadge(item.status)}</td>
+                        <td style={{ padding: '8px', fontSize: '14px', fontWeight: 400, color: colors.textSecondary, fontFamily: '"Geist Mono", monospace', lineHeight: '20px', textAlign: 'center', verticalAlign: 'middle' }}>{item.createdAt ?? item.moveInDate}</td>
+                        <td style={{ padding: '8px', fontSize: '14px', fontWeight: 400, color: colors.textSecondary, fontFamily: '"Geist Mono", monospace', lineHeight: '20px', textAlign: 'center', verticalAlign: 'middle' }}>{item.moveInDate}</td>
+                        <td style={{ padding: '8px', fontSize: '14px', fontWeight: 400, color: colors.textSecondary, fontFamily: '"Geist Mono", monospace', lineHeight: '20px', textAlign: 'center', verticalAlign: 'middle' }}>{String(item.tenure).toUpperCase()}</td>
                       </motion.tr>
                     ))}
                   </tbody>
                 </table>
               </motion.div>
             </AnimatePresence>
+
+            </div>{/* end scrollable area */}
 
             {/* Bookings Pagination Footer */}
             <footer style={{
@@ -5567,62 +5271,71 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               marginTop: 'auto',
               backgroundColor: colors.bg
             }}>
-              <span style={{ fontSize: '14px', color: colors.textSecondary }}>
-                Showing {bookingsStartItem} to {bookingsEndItem} of {bookingsTotalItems} entries
+              <span style={{ fontSize: '14px', color: colors.textSecondary, fontFamily: '"Geist", sans-serif', fontWeight: 400, lineHeight: '20px' }}>
+                Showing {currentBookingsData.length} of {bookingsTotalItems} entries
               </span>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <button onClick={handleBookingsPrevious} disabled={bookingsPage === 1} style={{
-                  padding: '6px 12px',
-                  border: `1px solid ${colors.border}`,
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <button type="button" onClick={handleBookingsPrevious} disabled={bookingsPage === 1} style={{
+                  padding: '4px 6px',
+                  border: 'none',
                   borderRadius: '8px',
-                  background: 'transparent',
+                  background: isDarkMode ? 'rgba(39, 39, 42, 1)' : colors.white,
+                  boxShadow: '0px 1px 2px 0px rgba(0, 0, 0, 0.05)',
                   cursor: bookingsPage === 1 ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
                   opacity: bookingsPage === 1 ? 0.5 : 1
                 }}>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/01c076b6-3528-475d-af10-7b71b96e0863.svg" style={{ width: '16px' }} />
-                  <span style={{ color: colors.textPrimary, fontSize: '14px', fontWeight: 500 }}>Previous</span>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/01c076b6-3528-475d-af10-7b71b96e0863.svg" alt="" style={{ width: '16px' }} />
+                  <span style={{ color: colors.textPrimary, fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif' }}>Previous</span>
                 </button>
                 {getBookingsPageNumbers().map((page, i) => (
-                  <button key={`bp-${page}-${i}`} onClick={() => handleBookingsPageClick(page)} style={{
-                    width: '28px',
-                    height: '28px',
-                    border: page === bookingsPage ? (isDarkMode ? '1px solid rgba(115, 115, 115, 1)' : `1px solid ${colors.accent}`) : 'none',
-                    borderRadius: '8px',
-                    cursor: page === -1 ? 'default' : 'pointer',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    backgroundColor: page === bookingsPage ? (isDarkMode ? 'rgba(82, 82, 91, 1)' : 'rgba(237, 243, 255, 1)') : 'transparent',
-                    color: page === bookingsPage ? (isDarkMode ? '#FFFFFF' : colors.accent) : colors.textPrimary
-                  }}>
+                  <button
+                    type="button"
+                    key={`bp-${page}-${i}`}
+                    onClick={() => handleBookingsPageClick(page)}
+                    disabled={page === -1}
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      border: page === bookingsPage ? (isDarkMode ? '1px solid rgba(115, 115, 115, 1)' : `1px solid ${colors.paginationBlue}`) : 'none',
+                      borderRadius: '8px',
+                      cursor: page === -1 ? 'default' : 'pointer',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      fontFamily: '"Geist", sans-serif',
+                      backgroundColor: page === bookingsPage ? (isDarkMode ? 'rgba(82, 82, 91, 1)' : colors.paginationBlueBg) : 'transparent',
+                      color: page === bookingsPage ? (isDarkMode ? '#FFFFFF' : colors.paginationBlue) : colors.textPrimary
+                    }}
+                  >
                     {page === -1 ? '...' : page}
                   </button>
                 ))}
-                <button onClick={handleBookingsNext} disabled={bookingsPage === bookingsTotalPages} style={{
-                  padding: '6px 12px',
-                  border: `1px solid ${colors.border}`,
+                <button type="button" onClick={handleBookingsNext} disabled={bookingsPage === bookingsTotalPages} style={{
+                  padding: '4px 6px',
+                  border: 'none',
                   borderRadius: '8px',
-                  background: 'transparent',
+                  background: isDarkMode ? 'rgba(39, 39, 42, 1)' : colors.white,
+                  boxShadow: '0px 1px 2px 0px rgba(0, 0, 0, 0.05)',
                   cursor: bookingsPage === bookingsTotalPages ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
                   opacity: bookingsPage === bookingsTotalPages ? 0.5 : 1
                 }}>
-                  <span style={{ color: colors.textPrimary, fontSize: '14px', fontWeight: 500 }}>Next</span>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/607c4c87-4637-410f-bdea-5d4899aac524.svg" style={{ width: '16px' }} />
+                  <span style={{ color: colors.textPrimary, fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif' }}>Next</span>
+                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/607c4c87-4637-410f-bdea-5d4899aac524.svg" alt="" style={{ width: '16px' }} />
                 </button>
               </div>
             </footer>
           </>
         ) : activeNavigation === 'AccountDetails' ? (
-          <>
+          <PageSection pageKey="AccountDetails">
             {/* Account Details Header */}
             <header style={{
-              height: '56px',
-              padding: '0 24px',
+              minHeight: '56px',
+              padding: '8px 24px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -5637,38 +5350,26 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg" style={{
                   width: '20px',
                   cursor: 'pointer'
-                }} alt="back" onClick={() => setActiveNavigation('Listings')} />
+                }} alt="back" onClick={() => setActiveNavigation(mainNavBeforeProfilePageRef.current)} />
                 <div style={{
                   height: '16px',
                   borderLeft: `1px solid ${colors.border}`
                 }} />
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <span style={{
-                    fontSize: '14px',
-                    color: colors.textSecondary,
-                    fontFamily: '"Geist Mono"',
-                    textTransform: 'uppercase'
-                  }}>Dashboard</span>
-                  <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/42fc4aca-b2d6-4358-bd46-3ec69e3c9773.svg" style={{
-                    width: '14px'
-                  }} />
-                  <span style={{
-                    fontSize: '14px',
-                    color: colors.textPrimary,
-                    fontFamily: '"Geist Mono"',
-                    textTransform: 'uppercase'
-                  }}>Account Details</span>
-                </div>
+                <span style={{
+                  fontSize: '14px',
+                  color: colors.textPrimary,
+                  fontFamily: '"Geist Mono", monospace',
+                  fontWeight: 400,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.02em'
+                }}>Profile</span>
               </div>
             </header>
 
-            {/* Account Details Content */}
+            {/* Account Details Content — Figma 5165:52374 */}
             <div style={{
               flex: 1,
+              minHeight: 0,
               overflowY: 'auto',
               padding: '24px',
               backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
@@ -5676,13 +5377,296 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               flexDirection: 'column',
               gap: '40px'
             }}>
-              {/* Account Details Card */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* Subscription Details — Figma 5165:52508 */}
+              <div style={{
+                border: `1px solid ${colors.border}`,
+                borderRadius: '16px',
+                overflow: 'hidden',
+                backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : '#ffffff'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '16px',
+                  backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : '#fafafa',
+                  width: '100%',
+                  boxSizing: 'border-box'
+                }}>
+                  <span style={{
+                    fontSize: '16px',
+                    fontWeight: 500,
+                    fontFamily: '"Geist", sans-serif',
+                    color: colors.textPrimary,
+                    lineHeight: '24px',
+                    whiteSpace: 'nowrap'
+                  }}>Subscription Details</span>
+                </div>
+                <div style={{
+                  padding: '16px',
+                  overflowX: 'auto',
+                  width: '100%',
+                  boxSizing: 'border-box'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: '12px',
+                    width: '100%',
+                    minWidth: 0,
+                    boxSizing: 'border-box'
+                  }}>
+                    {/* Basic (current) — 5186:54881 */}
+                    <div style={{
+                      position: 'relative',
+                      flex: '1 1 0',
+                      minWidth: 0,
+                      height: '84px',
+                      borderRadius: '8px',
+                      border: `1px solid ${colors.border}`,
+                      backgroundColor: '#171717',
+                      padding: '16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      boxSizing: 'border-box'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: '8px',
+                        height: '52px',
+                        width: '100%',
+                        flexShrink: 0,
+                        boxSizing: 'border-box'
+                      }}>
+                        <div style={{
+                          position: 'relative',
+                          width: '40px',
+                          height: '40px',
+                          flexShrink: 0,
+                          boxShadow: SUB_BADGE_SHADOW_XS
+                        }}>
+                          <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            overflow: 'hidden',
+                            pointerEvents: 'none'
+                          }}>
+                            <img
+                              src={SUB_PLAN_BASIC}
+                              alt=""
+                              decoding="async"
+                              style={{
+                                position: 'absolute',
+                                left: 0,
+                                top: 0,
+                                width: '100%',
+                                height: '100%',
+                                maxWidth: 'none',
+                                objectFit: 'cover'
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', minWidth: 0 }}>
+                          <span style={{
+                            fontSize: '16px',
+                            fontWeight: 500,
+                            fontFamily: '"Geist", sans-serif',
+                            lineHeight: '24px',
+                            color: '#ffffff'
+                          }}>Basic</span>
+                          <span style={{
+                            fontSize: '14px',
+                            fontWeight: 400,
+                            fontFamily: '"Geist", sans-serif',
+                            lineHeight: '20px',
+                            color: '#fafafa'
+                          }}>Essential features for getting started</span>
+                        </div>
+                      </div>
+                      <div style={{
+                        position: 'absolute',
+                        right: '11.67px',
+                        top: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '2px',
+                        padding: '2px 6px',
+                        borderRadius: '6px',
+                        border: `1px solid ${colors.border}`,
+                        backgroundColor: '#ffffff',
+                        boxSizing: 'border-box'
+                      }}>
+                        <span style={{
+                          fontSize: '12px',
+                          fontWeight: 500,
+                          fontFamily: '"Geist", sans-serif',
+                          lineHeight: '16px',
+                          color: '#0a0a0a',
+                          textAlign: 'center',
+                          whiteSpace: 'nowrap'
+                        }}>Current</span>
+                      </div>
+                    </div>
+                    {/* Silver — 5183:54530 */}
+                    <div style={{
+                      flex: '1 1 0',
+                      minWidth: 0,
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      alignSelf: 'stretch'
+                    }}>
+                      <div style={{
+                        flex: '1 1 0',
+                        minWidth: 0,
+                        height: '100%',
+                        minHeight: '84px',
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '16px',
+                        borderRadius: '8px',
+                        border: `2px solid ${colors.border}`,
+                        backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : '#ffffff',
+                        opacity: 0.5,
+                        boxSizing: 'border-box'
+                      }}>
+                        <div style={{
+                          position: 'relative',
+                          width: '40px',
+                          height: '40px',
+                          flexShrink: 0,
+                          boxShadow: SUB_BADGE_SHADOW_XS
+                        }}>
+                          <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            overflow: 'hidden',
+                            pointerEvents: 'none'
+                          }}>
+                            <img
+                              src={SUB_PLAN_SILVER}
+                              alt=""
+                              decoding="async"
+                              style={{
+                                position: 'absolute',
+                                height: '115.79%',
+                                width: '105.26%',
+                                left: '-3.27%',
+                                top: '0.31%',
+                                maxWidth: 'none'
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', minWidth: 0 }}>
+                          <span style={{
+                            fontSize: '16px',
+                            fontWeight: 500,
+                            fontFamily: '"Geist", sans-serif',
+                            lineHeight: '24px',
+                            color: isDarkMode ? colors.textPrimary : '#0a0a0a'
+                          }}>Silver</span>
+                          <span style={{
+                            fontSize: '14px',
+                            fontWeight: 400,
+                            fontFamily: '"Geist", sans-serif',
+                            lineHeight: '20px',
+                            color: isDarkMode ? colors.textSecondary : '#737373'
+                          }}>Advanced features with extended limits</span>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Gold — 5183:54544 */}
+                    <div style={{
+                      flex: '1 1 0',
+                      minWidth: 0,
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      alignSelf: 'stretch'
+                    }}>
+                      <div style={{
+                        flex: '1 1 0',
+                        minWidth: 0,
+                        height: '100%',
+                        minHeight: '84px',
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '16px',
+                        borderRadius: '8px',
+                        border: `2px solid ${colors.border}`,
+                        backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : '#ffffff',
+                        opacity: 0.5,
+                        boxSizing: 'border-box'
+                      }}>
+                        <div style={{
+                          position: 'relative',
+                          width: '40px',
+                          height: '40px',
+                          flexShrink: 0,
+                          boxShadow: SUB_BADGE_SHADOW_XS
+                        }}>
+                          <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            overflow: 'hidden',
+                            pointerEvents: 'none'
+                          }}>
+                            <img
+                              src={SUB_PLAN_GOLD}
+                              alt=""
+                              decoding="async"
+                              style={{
+                                position: 'absolute',
+                                left: 0,
+                                top: 0,
+                                width: '100%',
+                                height: '100%',
+                                maxWidth: 'none',
+                                objectFit: 'cover'
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px', minWidth: 0 }}>
+                          <span style={{
+                            fontSize: '16px',
+                            fontWeight: 500,
+                            fontFamily: '"Geist", sans-serif',
+                            lineHeight: '24px',
+                            color: isDarkMode ? colors.textPrimary : '#0a0a0a'
+                          }}>Gold</span>
+                          <span style={{
+                            fontSize: '14px',
+                            fontWeight: 400,
+                            fontFamily: '"Geist", sans-serif',
+                            lineHeight: '20px',
+                            color: isDarkMode ? colors.textSecondary : '#737373'
+                          }}>Premium features with priority support</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Account Details (personal) */}
               <div style={{
                 border: `1px solid ${colors.border}`,
                 borderRadius: '16px',
                 overflow: 'hidden'
               }}>
-                {/* Card Header */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -5699,7 +5683,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {editingAccountDetails ? (
                       <>
-                        <button onClick={() => setEditingAccountDetails(false)} style={{
+                        <button type="button" onClick={() => setEditingAccountDetails(false)} style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: '6px',
@@ -5717,7 +5701,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                           </svg>
                           <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary }}>Save</span>
                         </button>
-                        <button onClick={() => setEditingAccountDetails(false)} style={{
+                        <button type="button" onClick={() => setEditingAccountDetails(false)} style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: '6px',
@@ -5735,7 +5719,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                         </button>
                       </>
                     ) : (
-                      <button onClick={() => setEditingAccountDetails(true)} style={{
+                      <button type="button" onClick={() => setEditingAccountDetails(true)} style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
@@ -5755,7 +5739,6 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                   </div>
                 </div>
 
-                {/* Card Body */}
                 <div style={{
                   padding: '16px',
                   display: 'flex',
@@ -5809,9 +5792,10 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                   {/* Form Fields Row */}
                   <div style={{
                     display: 'flex',
-                    gap: '44px',
-                    alignItems: 'center',
-                    width: '100%'
+                    gap: '40px',
+                    alignItems: 'flex-start',
+                    width: '100%',
+                    flexWrap: 'wrap'
                   }}>
                     {/* Account Name */}
                     <div style={{ flex: 1, minWidth: '258px', display: 'flex', flexDirection: 'column' }}>
@@ -5868,32 +5852,30 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                       <div style={{ padding: '4px' }}>
                         <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Phone Number</span>
                       </div>
-                      <div style={{
-                        display: 'flex',
-                        width: '100%',
-                        borderRadius: '8px',
-                        border: `1px solid ${editingAccountDetails ? '#a3a3a3' : colors.border}`,
-                        boxShadow: editingAccountDetails ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
-                        overflow: 'hidden'
-                      }}>
-                        {/* Country Code */}
-                        <div style={{
-                          height: '40px',
-                          padding: '6px 12px',
-                          borderRight: `1px solid ${editingAccountDetails ? '#a3a3a3' : colors.border}`,
-                          backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          cursor: 'pointer'
-                        }}>
-                          <img src="http://localhost:3845/assets/c7e4f7ed00a446953b564ef3562af52f24a0c4ae.svg" alt="US" style={{ width: '20px', height: '20px', borderRadius: '50%' }} />
+                      <div style={{ display: 'flex', width: '100%', alignItems: 'stretch' }}>
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            height: '40px',
+                            padding: '6px 12px',
+                            border: `1px solid ${editingAccountDetails ? '#a3a3a3' : colors.border}`,
+                            borderRight: 'none',
+                            borderRadius: '8px 0 0 8px',
+                            backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                            boxShadow: editingAccountDetails ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <img src="https://flagcdn.com/w40/us.png" alt="" style={{ width: '20px', height: '15px', objectFit: 'cover', borderRadius: '2px' }} />
                           <span style={{ fontSize: '14px', color: colors.textPrimary }}>+1</span>
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
                             <path d="M4 6l4 4 4-4" stroke={colors.textPrimary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                         </div>
-                        {/* Phone Input */}
                         <input
                           type="tel"
                           defaultValue="(555) 000-0000"
@@ -5901,10 +5883,13 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                           placeholder="(555) 000-0000"
                           style={{
                             flex: 1,
+                            minWidth: 0,
                             height: '40px',
                             padding: '6px 12px',
-                            border: 'none',
+                            border: `1px solid ${editingAccountDetails ? '#a3a3a3' : colors.border}`,
+                            borderRadius: '0 8px 8px 0',
                             backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                            boxShadow: editingAccountDetails ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
                             fontSize: '14px',
                             color: editingAccountDetails ? colors.textPrimary : colors.textMuted,
                             lineHeight: '20px',
@@ -5915,10 +5900,63 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                       </div>
                     </div>
                   </div>
+
+                  <div style={{
+                    display: 'flex',
+                    gap: '40px',
+                    alignItems: 'flex-start',
+                    width: '100%',
+                    flexWrap: 'wrap'
+                  }}>
+                    <div style={{ flex: 1, minWidth: '258px', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ padding: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Date of birth</span>
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        height: '40px',
+                        padding: '8px 12px',
+                        border: `1px solid ${editingAccountDetails ? '#a3a3a3' : colors.border}`,
+                        borderRadius: '8px',
+                        backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                        boxShadow: editingAccountDetails ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
+                        cursor: editingAccountDetails ? 'pointer' : 'default'
+                      }}>
+                        <Calendar size={16} color={colors.textSecondary} aria-hidden />
+                        <span style={{ fontSize: '14px', color: colors.textMuted, lineHeight: '20px' }}>Date of birth</span>
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, minWidth: '258px', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ padding: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Role</span>
+                      </div>
+                      <input
+                        type="text"
+                        defaultValue="Anmol Education"
+                        readOnly={!editingAccountDetails}
+                        style={{
+                          height: '40px',
+                          padding: '6px 12px',
+                          border: `1px solid ${editingAccountDetails ? '#a3a3a3' : colors.border}`,
+                          borderRadius: '8px',
+                          backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                          boxShadow: editingAccountDetails ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
+                          fontSize: '14px',
+                          color: colors.textPrimary,
+                          lineHeight: '20px',
+                          outline: 'none',
+                          fontFamily: 'inherit'
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
+              </div>
 
-              {/* Address Information Card */}
+              {/* Account Details (organization) — Figma 5165:52540 */}
               <div style={{
                 border: `1px solid ${colors.border}`,
                 borderRadius: '16px',
@@ -5937,7 +5975,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                     fontWeight: 500,
                     color: colors.textPrimary,
                     lineHeight: '24px'
-                  }}>Address Information</span>
+                  }}>Account Details</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {editingAddressInfo ? (
                       <>
@@ -5996,14 +6034,68 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                   </div>
                 </div>
 
-                {/* Card Body */}
+                {/* Card Body — Figma: org row, address, then location row */}
                 <div style={{
                   padding: '16px',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '16px'
                 }}>
-                  {/* Address Textarea */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '44px',
+                    alignItems: 'flex-start',
+                    width: '100%',
+                    flexWrap: 'wrap'
+                  }}>
+                    <div style={{ flex: 1, minWidth: '258px', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ padding: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Account Name</span>
+                      </div>
+                      <input
+                        type="text"
+                        defaultValue="411014"
+                        readOnly={!editingAddressInfo}
+                        style={{
+                          height: '40px',
+                          padding: '6px 12px',
+                          border: `1px solid ${editingAddressInfo ? '#a3a3a3' : colors.border}`,
+                          borderRadius: '8px',
+                          backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                          boxShadow: editingAddressInfo ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
+                          fontSize: '14px',
+                          color: colors.textPrimary,
+                          lineHeight: '20px',
+                          outline: 'none',
+                          fontFamily: 'inherit'
+                        }}
+                      />
+                    </div>
+                    <div style={{ flex: 1, minWidth: '258px', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ padding: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Account Email Address</span>
+                      </div>
+                      <input
+                        type="email"
+                        defaultValue="arthur@alignui.com"
+                        readOnly={!editingAddressInfo}
+                        style={{
+                          height: '40px',
+                          padding: '6px 12px',
+                          border: `1px solid ${editingAddressInfo ? '#a3a3a3' : colors.border}`,
+                          borderRadius: '8px',
+                          backgroundColor: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white',
+                          boxShadow: editingAddressInfo ? '0px 0px 0px 3px rgba(161, 161, 170, 0.5)' : '0px 1px 2px rgba(0,0,0,0.05)',
+                          fontSize: '14px',
+                          color: colors.textPrimary,
+                          lineHeight: '20px',
+                          outline: 'none',
+                          fontFamily: 'inherit'
+                        }}
+                      />
+                    </div>
+                  </div>
+
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <div style={{ padding: '4px' }}>
                       <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>Address</span>
@@ -6028,12 +6120,12 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                     />
                   </div>
 
-                  {/* Zip, City, State, Country Row */}
                   <div style={{
                     display: 'flex',
                     gap: '44px',
-                    alignItems: 'center',
-                    width: '100%'
+                    alignItems: 'flex-start',
+                    width: '100%',
+                    flexWrap: 'wrap'
                   }}>
                     {/* Zip Code */}
                     <div style={{ flex: 1, minWidth: '0', display: 'flex', flexDirection: 'column' }}>
@@ -6135,9 +6227,9 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 </div>
               </div>
             </div>
-          </>
+          </PageSection>
         ) : activeNavigation === 'Teams' ? (
-          <>
+          <PageSection pageKey="Teams">
             {/* Teams Header */}
             <header style={{
               height: '56px',
@@ -6156,7 +6248,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/7535b31f-4722-4f37-b3f2-a80994c6c8e2.svg" style={{
                   width: '20px',
                   cursor: 'pointer'
-                }} alt="back" onClick={() => setActiveNavigation('Listings')} />
+                }} alt="back" onClick={() => setActiveNavigation(mainNavBeforeProfilePageRef.current)} />
                 <div style={{
                   height: '16px',
                   borderLeft: `1px solid ${colors.border}`
@@ -6349,7 +6441,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 </table>
               </div>
             </div>
-          </>
+          </PageSection>
         ) : null}
       </main>
 
@@ -6768,6 +6860,126 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Commission Table Modal */}
+      <AnimatePresence>
+        {showCommissionModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setShowCommissionModal(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(2px)',
+              zIndex: 200,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 16 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: '1100px',
+                maxWidth: '95vw',
+                backgroundColor: isDarkMode ? '#171717' : 'white',
+                border: `1px solid ${isDarkMode ? '#2e2e2e' : '#ebebeb'}`,
+                borderRadius: '16px',
+                boxShadow: '0px 16px 32px -12px rgba(14,18,27,0.1)',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              {/* Modal Header */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '16px',
+                borderBottom: `1px solid ${isDarkMode ? '#2e2e2e' : '#ebebeb'}`,
+                backgroundColor: isDarkMode ? '#171717' : 'white',
+              }}>
+                <span style={{ fontSize: '18px', fontWeight: 600, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', lineHeight: '28px' }}>Commission Table</span>
+                <button
+                  type="button"
+                  onClick={() => setShowCommissionModal(false)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '6px',
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: '8px',
+                    background: isDarkMode ? '#171717' : 'white',
+                    cursor: 'pointer',
+                    boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)',
+                  }}
+                >
+                  <X size={16} color={colors.textPrimary} strokeWidth={2} />
+                </button>
+              </div>
+              {/* Modal Content — Table */}
+              <div style={{ padding: '20px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
+                <div style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: isDarkMode ? 'rgba(23,23,23,1)' : '#fafafa' }}>
+                        <th style={{ padding: '11px 8px 11px 24px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, width: '120px' }}>SR.NO.</th>
+                        <th style={{ padding: '11px 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, width: '180px' }}>NAME</th>
+                        <th style={{ padding: '11px 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, width: '140px' }}>VALUE</th>
+                        <th style={{ padding: '11px 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, width: '140px' }}>FORMULA</th>
+                        <th style={{ padding: '11px 16px 11px 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, lineHeight: '20px', borderBottom: `1px solid ${colors.border}` }}>DESCRIPTION</th>
+                        <th style={{ padding: '11px 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, width: '160px' }}>STATE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { sr: '7907', name: '23-24 Commission', value: '500', formula: 'percentage', desc1: 'Flat AU$ 500 Commission for 23-24AY', desc2: 'Academic term from 2nd March 2023' },
+                        { sr: '7906', name: '23-24 Commission', value: '250', formula: 'fixed', desc1: 'Flat AU$ 500 Commission for 23-24AY', desc2: 'Academic term from 2nd March 2023' },
+                        { sr: '7905', name: '23-24 Commission', value: '400', formula: 'percentage', desc1: 'Flat AU$ 500 Commission for 23-24AY', desc2: 'Academic term from 2nd March 2023' },
+                      ].map((row) => (
+                        <tr key={row.sr} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                          <td style={{ padding: '18px 8px 18px 24px', fontSize: '14px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>{row.sr}</td>
+                          <td style={{ padding: '18px 8px', fontSize: '14px', fontFamily: '"Geist", sans-serif', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>{row.name}</td>
+                          <td style={{ padding: '18px 8px', fontSize: '14px', fontFamily: '"Geist Mono", monospace', fontWeight: 400, color: colors.textSecondary, lineHeight: '20px', textAlign: 'center' }}>{row.value}</td>
+                          <td style={{ padding: '18px 8px', fontSize: '14px', fontFamily: '"Geist", sans-serif', fontWeight: 500, color: colors.textSecondary, lineHeight: '20px', textAlign: 'center' }}>{row.formula}</td>
+                          <td style={{ padding: '18px 16px 18px 8px', fontSize: '14px', fontFamily: '"Geist", sans-serif', fontWeight: 500, color: colors.textPrimary, lineHeight: '20px' }}>
+                            <div>{row.desc1}</div>
+                            <div>{row.desc2}</div>
+                          </td>
+                          <td style={{ padding: '18px 8px', textAlign: 'center' }}>
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '2px 6px',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontFamily: '"Geist Mono", monospace',
+                              fontWeight: 500,
+                              color: '#16a34a',
+                              backgroundColor: 'rgba(22,163,74,0.1)',
+                              textTransform: 'uppercase',
+                              lineHeight: '16px',
+                            }}>ACTIVE</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>;

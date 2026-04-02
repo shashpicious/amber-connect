@@ -5,7 +5,7 @@ import { NavigationMenu } from './components/generated/NavigationMenu';
 
 let theme: Theme = 'light';
 // only use 'centered' container for standalone components, never for full page apps or websites.
-let container: Container = 'centered';
+let container: Container = 'none';
 
 function App() {
   function setTheme(theme: Theme) {
