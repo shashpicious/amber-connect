@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Lottie from 'lottie-react';
 import { Button } from '@/components/ui/button';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Plus, ChevronLeft, ChevronRight, ChevronDown, ChevronsUpDown, DollarSign, Hand, ExternalLink, PieChart, Building2, Tag, ReceiptText, Star, CalendarRange, Download, ArrowUpDown, TrendingDown, TrendingUp, Calendar, CircleUser, Users, LogOut, Sun, Moon, Monitor, Palette, X, PanelLeft, FileInput } from 'lucide-react';
 
 /** Figma 5165:52512 — raster badge art (exported PNGs in /public/assets) */
@@ -20,6 +22,16 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   console.log('NavigationMenu rendering...');
   const [activeTab, setActiveTab] = useState('Listings');
   const [isDarkMode, setIsDarkMode] = useState(initialMode === 'dark');
+
+  // Sync dark mode state to document root class
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -42,6 +54,8 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   const [listingsStatusFilter, setListingsStatusFilter] = useState('');
   const [selectedListing, setSelectedListing] = useState<any>(null);
   const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewsDateOpen, setReviewsDateOpen] = useState(false);
+  const [reviewsDate, setReviewsDate] = useState<Date | undefined>(undefined);
   const [bookingsPage, setBookingsPage] = useState(1);
   const itemsPerPage = 10;
   const listingsItemsPerPage = 7;
@@ -53,6 +67,8 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   const [isScrambling, setIsScrambling] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showCommissionModal, setShowCommissionModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [invoiceDetailTab, setInvoiceDetailTab] = useState<'booking' | 'student' | 'invoices'>('booking');
   const [editingAccountDetails, setEditingAccountDetails] = useState(false);
   const [editingAddressInfo, setEditingAddressInfo] = useState(false);
   const [teamsSearchQuery, setTeamsSearchQuery] = useState('');
@@ -1504,30 +1520,28 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     }
   };
 
-  // Event color tokens — direct rgba values matching Figma exactly
+  // Event color tokens — theme-aware for light/dark mode
   const getEventColorStyles = (color: string) => {
-    switch (color) {
-      case 'grey':
-        return { bg: 'var(--muted)', border: 'rgba(23,23,23,0.2)', text: 'var(--foreground)', time: 'rgba(23,23,23,0.6)' };
-      case 'orange':
-        return { bg: 'rgba(227,146,25,0.1)', border: 'rgba(217,119,6,0.4)', text: '#d97706', time: '#d97706' };
-      case 'blue':
-        return { bg: 'rgba(2,132,199,0.1)', border: 'rgba(2,132,199,0.4)', text: '#0284c7', time: '#0284c7' };
-      case 'green':
-        return { bg: 'rgba(22,163,74,0.1)', border: 'rgba(22,163,74,0.4)', text: '#16a34a', time: '#16a34a' };
-      case 'pink':
-        return { bg: 'rgba(224,52,52,0.1)', border: 'rgba(224,52,52,0.4)', text: '#dc2626', time: '#dc2626' };
-      case 'purple':
-        return { bg: 'rgba(147,51,234,0.1)', border: 'rgba(147,51,234,0.4)', text: '#9333ea', time: '#9333ea' };
-      case 'indigo':
-        return { bg: 'rgba(79,70,229,0.1)', border: 'rgba(79,70,229,0.4)', text: '#4f46e5', time: '#4f46e5' };
-      case 'brand':
-        return { bg: 'rgba(12,99,248,0.1)', border: 'rgba(12,99,248,0.4)', text: '#0c63f8', time: '#0c63f8' };
-      case 'yellow':
-        return { bg: 'rgba(202,138,4,0.1)', border: 'rgba(202,138,4,0.4)', text: '#ca8a04', time: '#ca8a04' };
-      default:
-        return { bg: 'rgba(2,132,199,0.1)', border: 'rgba(2,132,199,0.4)', text: '#0284c7', time: '#0284c7' };
+    if (color === 'grey') {
+      return {
+        bg: 'var(--muted)',
+        border: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(23,23,23,0.2)',
+        text: 'var(--foreground)',
+        time: isDarkMode ? 'rgba(255,255,255,0.6)' : 'rgba(23,23,23,0.6)'
+      };
     }
+    const palette: Record<string, { bg: string; border: string; text: string }> = {
+      orange:  { bg: 'rgba(227,146,25,0.15)', border: 'rgba(217,119,6,0.4)', text: isDarkMode ? '#f59e0b' : '#d97706' },
+      blue:    { bg: 'rgba(2,132,199,0.15)', border: 'rgba(2,132,199,0.4)', text: isDarkMode ? '#38bdf8' : '#0284c7' },
+      green:   { bg: 'rgba(22,163,74,0.15)', border: 'rgba(22,163,74,0.4)', text: isDarkMode ? '#4ade80' : '#16a34a' },
+      pink:    { bg: 'rgba(224,52,52,0.15)', border: 'rgba(224,52,52,0.4)', text: isDarkMode ? '#f87171' : '#dc2626' },
+      purple:  { bg: 'rgba(147,51,234,0.15)', border: 'rgba(147,51,234,0.4)', text: isDarkMode ? '#c084fc' : '#9333ea' },
+      indigo:  { bg: 'rgba(79,70,229,0.15)', border: 'rgba(79,70,229,0.4)', text: isDarkMode ? '#a5b4fc' : '#4f46e5' },
+      brand:   { bg: 'rgba(12,99,248,0.15)', border: 'rgba(12,99,248,0.4)', text: isDarkMode ? '#60a5fa' : '#0c63f8' },
+      yellow:  { bg: 'rgba(202,138,4,0.15)', border: 'rgba(202,138,4,0.4)', text: isDarkMode ? '#fbbf24' : '#ca8a04' },
+    };
+    const c = palette[color] || palette.blue;
+    return { bg: c.bg, border: c.border, text: c.text, time: c.text };
   };
   
   // Invoices (demo) — 123 rows, 25/page to match Figma; age buckets match Invoice Age cards
@@ -1886,23 +1900,15 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
       }}>
           <AnimatePresence>
             {!isCollapsed && (
-              <motion.div
+              <motion.img
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                style={{ display: 'flex', alignItems: 'center', gap: '0px', userSelect: 'none' }}
-              >
-                <span style={{ fontSize: '18px', fontWeight: 700, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', letterSpacing: '-0.02em' }}>amber </span>
-                <span style={{ fontSize: '18px', fontWeight: 400, color: '#3F83F8', fontFamily: '"Geist", sans-serif', letterSpacing: '-0.02em' }}>c</span>
-                <span style={{ fontSize: '18px', fontWeight: 400, color: '#3F83F8', fontFamily: '"Geist", sans-serif', letterSpacing: '-0.02em', position: 'relative' }}>
-                  <svg width="11" height="11" viewBox="0 0 11 11" style={{ display: 'inline-block', verticalAlign: 'middle', marginBottom: '1px' }}>
-                    <circle cx="5.5" cy="5.5" r="4" fill="none" stroke="#3F83F8" strokeWidth="1.8" />
-                    <circle cx="5.5" cy="5.5" r="1.2" fill="#3F83F8" />
-                  </svg>
-                </span>
-                <span style={{ fontSize: '18px', fontWeight: 400, color: '#3F83F8', fontFamily: '"Geist", sans-serif', letterSpacing: '-0.02em' }}>nnect</span>
-              </motion.div>
+                src={isDarkMode ? '/assets/amber-connect-logo-dark.svg' : '/assets/amber-connect-logo.svg'}
+                alt="Amber Connect"
+                style={{ height: '28px', width: 'auto', userSelect: 'none' }}
+              />
             )}
           </AnimatePresence>
           <button
@@ -3096,7 +3102,8 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: Math.min(idx * 0.02, 0.3), ease: [0.4, 0, 0.2, 1] }}
-                        style={{ borderBottom: `1px solid ${colors.border}`, height: '56px', backgroundColor: isDarkMode ? colors.bg : '#fff' }}
+                        style={{ borderBottom: `1px solid ${colors.border}`, height: '56px', backgroundColor: isDarkMode ? colors.bg : '#fff', cursor: 'pointer' }}
+                        onClick={() => { setSelectedInvoice(row); setInvoiceDetailTab('booking'); }}
                         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDarkMode ? 'rgba(23, 23, 23, 0.6)' : 'rgba(250, 250, 250, 0.85)'; }}
                         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDarkMode ? colors.bg : '#fff'; }}
                       >
@@ -3205,6 +3212,235 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 </button>
               </div>
             </footer>
+
+            {/* Invoice Detail Sidebar */}
+            <AnimatePresence>
+              {selectedInvoice && (
+                <>
+                  {/* Overlay — covers entire page including sidebar */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    onClick={() => setSelectedInvoice(null)}
+                    style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(23,23,23,0.1)', zIndex: 50 }}
+                  />
+                  {/* Sidebar panel */}
+                  <motion.div
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
+                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                    style={{
+                      position: 'fixed', top: '16px', right: '16px', bottom: '16px',
+                      width: '720px', maxWidth: 'calc(100% - 32px)',
+                      backgroundColor: isDarkMode ? '#171717' : 'white',
+                      borderRadius: '20px',
+                      boxShadow: '0px 0px 0px 1px rgba(51,51,51,0.04), 0px 1px 1px 0.5px rgba(51,51,51,0.04), 0px 6px 6px -3px rgba(51,51,51,0.04), 0px 12px 12px -6px rgba(51,51,51,0.04), 0px 24px 24px -12px rgba(51,51,51,0.04)',
+                      zIndex: 51, display: 'flex', flexDirection: 'column', overflow: 'hidden'
+                    }}
+                  >
+                    {/* Header */}
+                    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ display: 'flex', gap: '12px' }}>
+                            <button type="button" onClick={() => {
+                              const curIdx = sortedInvoicesData.findIndex((r: any) => r.invoiceNumber === selectedInvoice.invoiceNumber);
+                              if (curIdx > 0) setSelectedInvoice(sortedInvoicesData[curIdx - 1]);
+                            }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', border: `1px solid ${colors.border}`, borderRadius: '8px', background: isDarkMode ? '#171717' : 'white', cursor: 'pointer', boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)' }}>
+                              <ChevronLeft size={16} color={colors.textPrimary} strokeWidth={2} />
+                            </button>
+                            <button type="button" onClick={() => {
+                              const curIdx = sortedInvoicesData.findIndex((r: any) => r.invoiceNumber === selectedInvoice.invoiceNumber);
+                              if (curIdx < sortedInvoicesData.length - 1) setSelectedInvoice(sortedInvoicesData[curIdx + 1]);
+                            }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', border: `1px solid ${colors.border}`, borderRadius: '8px', background: isDarkMode ? '#171717' : 'white', cursor: 'pointer', boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)' }}>
+                              <ChevronRight size={16} color={colors.textPrimary} strokeWidth={2} />
+                            </button>
+                          </div>
+                          <span style={{ fontSize: '18px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', lineHeight: '28px' }}>#{selectedInvoice.invoiceNumber}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          {getStatusBadge(selectedInvoice.status)}
+                          <button type="button" onClick={() => setSelectedInvoice(null)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', border: `1px solid ${colors.border}`, borderRadius: '8px', background: isDarkMode ? '#171717' : 'white', cursor: 'pointer', boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)' }}>
+                            <X size={16} color={colors.textPrimary} strokeWidth={2} />
+                          </button>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <button type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px', background: isDarkMode ? '#171717' : 'white', cursor: 'pointer' }}>
+                          <Hand size={20} color={colors.textPrimary} strokeWidth={1.5} />
+                          <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Inter", sans-serif', letterSpacing: '-0.084px' }}>Raise a request</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Lead Summary section header */}
+                    <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Lead Summary</span>
+                    </div>
+
+                    {/* Lead Summary data */}
+                    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? '#171717' : 'white' }}>
+                      {[
+                        ['Name', 'Sakshi Surve'],
+                        ['Email', 'sakshisurve53@gmail.com'],
+                        ['Phone', '+917773901983'],
+                      ].map(([label, value]) => (
+                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
+                          <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
+                          <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>{value}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Tabs */}
+                    <div style={{ display: 'flex', borderBottom: `1px solid ${colors.border}`, padding: '0 16px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
+                      {(['booking', 'student', 'invoices'] as const).map((tab) => (
+                        <button key={tab} type="button" onClick={() => setInvoiceDetailTab(tab)} style={{
+                          padding: '14px 8px', fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif',
+                          color: invoiceDetailTab === tab ? (isDarkMode ? '#e5e5e5' : '#171717') : colors.textSecondary,
+                          borderBottom: invoiceDetailTab === tab ? '2px solid #171717' : '2px solid transparent',
+                          background: 'none', border: 'none', borderBottomWidth: '2px', borderBottomStyle: 'solid',
+                          borderBottomColor: invoiceDetailTab === tab ? (isDarkMode ? '#e5e5e5' : '#171717') : 'transparent',
+                          cursor: 'pointer', whiteSpace: 'nowrap'
+                        }}>
+                          {tab === 'booking' ? 'Booking Details' : tab === 'student' ? 'Student Details' : 'Invoices'}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Tab content — scrollable */}
+                    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 16px 16px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
+                      {invoiceDetailTab === 'booking' && (
+                        <>
+                          {[0, 1].map((cardIdx) => (
+                            <div key={cardIdx} style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden' }}>
+                              <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Lead Details</span>
+                              </div>
+                              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
+                                {[
+                                  ['Property Name', 'Southall And Soul, London'],
+                                  ['Room Type', 'Nook'],
+                                  ['Tenure Length', '02/7/2025'],
+                                  ['Rent ( per week)', '1050 GBP'],
+                                ].map(([label, value]) => (
+                                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
+                                    <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
+                                    <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: label === 'Tenure Length' || label === 'Rent ( per week)' ? '"Geist Mono", monospace' : '"Geist", sans-serif' }}>{value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                      {invoiceDetailTab === 'student' && (
+                        <>
+                          {/* Student Details */}
+                          <div style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden' }}>
+                            <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa' }}>
+                              <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Student Details</span>
+                            </div>
+                            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
+                              {[
+                                ['DOB', '02/7/2025'],
+                                ['Gender', 'Female'],
+                                ['Nationality', 'India'],
+                                ['Address line 1', 'Pune'],
+                                ['Address line 2', '--'],
+                                ['City', '--'],
+                                ['State/Province', 'Maharashtra'],
+                                ['Country', 'India'],
+                                ['ZIP code', '411015'],
+                              ].map(([label, value]) => (
+                                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
+                                  <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
+                                  <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: label === 'DOB' || label === 'ZIP code' ? '"Geist Mono", monospace' : '"Geist", sans-serif' }}>{value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          {/* Emergency Contact Details */}
+                          <div style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden' }}>
+                            <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa' }}>
+                              <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Emergency Contact Details</span>
+                            </div>
+                            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
+                              {[
+                                ['Name', 'Siddhi Surve'],
+                                ['Relationship', 'Sister'],
+                                ['Email', 'siddhisurve098@gmail.com'],
+                                ['Phone Number', '+918080973179'],
+                              ].map(([label, value]) => (
+                                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
+                                  <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
+                                  <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>{value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          {/* Guarantor Details */}
+                          <div style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden' }}>
+                            <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa' }}>
+                              <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Guarantor Details</span>
+                            </div>
+                            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
+                              {[
+                                ['Name', 'Siddhi Surve'],
+                                ['Relationship', 'Sister'],
+                                ['Email', 'siddhisurve098@gmail.com'],
+                                ['Phone Number', '+918080973179'],
+                              ].map(([label, value]) => (
+                                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
+                                  <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
+                                  <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>{value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      {invoiceDetailTab === 'invoices' && (
+                        <div style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                              <tr style={{ backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa' }}>
+                                <th style={{ padding: '10px 20px', textAlign: 'left', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Invoice Number</th>
+                                <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Date</th>
+                                <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Total Amount</th>
+                                <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Due Date</th>
+                                <th style={{ padding: '10px 20px', textAlign: 'center', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {[
+                                { num: 'INV-025708', date: '02/7/2025', amount: 'GBP 117.09', due: '12/1/2025' },
+                                { num: 'INV-025709', date: '02/7/2025', amount: 'GBP 125.50', due: '12/2/2025' },
+                                { num: 'INV-025710', date: '02/7/2025', amount: 'GBP 132.75', due: '12/3/2025' },
+                                { num: 'INV-025711', date: '02/7/2025', amount: 'GBP 140.20', due: '12/4/2025' },
+                              ].map((inv) => (
+                                <tr key={inv.num} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                                  <td style={{ padding: '16px 20px', fontSize: '14px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: '#3F83F8' }}># {inv.num}</td>
+                                  <td style={{ padding: '16px 8px', fontSize: '14px', fontFamily: '"Geist Mono", monospace', fontWeight: 400, color: colors.textSecondary, textAlign: 'center' }}>{inv.date}</td>
+                                  <td style={{ padding: '16px 8px', fontSize: '14px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textPrimary, textAlign: 'center' }}>{inv.amount}</td>
+                                  <td style={{ padding: '16px 8px', fontSize: '14px', fontFamily: '"Geist Mono", monospace', fontWeight: 400, color: colors.textSecondary, textAlign: 'center' }}>{inv.due}</td>
+                                  <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                                    <span style={{ display: 'inline-block', padding: '2px 6px', borderRadius: '6px', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)', textTransform: 'uppercase', lineHeight: '16px' }}>SENT</span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </>
         ) : activeNavigation === 'Campaigns' ? (
             <PageSection pageKey="Campaigns">
@@ -3401,105 +3637,13 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               </div>
 
               {/* Right Sidebar */}
-              <div className="flex h-full min-h-0 w-[289px] shrink-0 flex-col gap-4 overflow-y-auto overflow-x-hidden border-l border-border bg-background p-4">
-                {/* Total Balance — Figma */}
-                <div className="bg-card text-card-foreground border-border relative h-[166px] shrink-0 overflow-hidden rounded-2xl border shadow-[0px_1px_2px_0px_rgba(0,0,0,0.08)]">
-                  {/* Blue gradient accent bar at top */}
-                  <div
-                    className="absolute -left-px -top-[7px] h-4 w-full"
-                    style={{ backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 100%), linear-gradient(90deg, #0c63f8 0%, #0c63f8 100%)' }}
-                  />
-                  {/* Shimmer sparkle */}
-                  <img
-                    src={figmaCampaignShimmer}
-                    alt=""
-                    className="absolute right-[10px] top-[-4px] size-[21px]"
-                    style={{ transform: 'rotate(11.58deg)' }}
-                    aria-hidden="true"
-                  />
-                  {/* Coin pair illustration — emoji fallback */}
-                  <div className="absolute right-[8px] top-[16px] flex items-center" aria-hidden="true" style={{ fontSize: '32px', lineHeight: 1 }}>
-                    <span style={{ marginRight: '-8px' }}>🪙</span>
-                    <span>🪙</span>
-                    <span style={{ fontSize: '14px', marginLeft: '2px', marginTop: '-12px' }}>✨</span>
-                  </div>
-                  <div className="absolute left-[15px] top-[25px] flex w-[219px] flex-col gap-4">
-                    <div className="flex flex-col gap-[7px]">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-xs font-medium text-foreground" style={{ fontFamily: '"Geist", sans-serif' }}>Total Balance</span>
-                          <div className="flex items-center">
-                            <img src={figmaCampaignCoin} alt="" className="size-4 shrink-0" />
-                            <span className="text-lg font-semibold leading-7 text-foreground" style={{ fontFamily: '"Geist", sans-serif' }}>
-                              121,345
-                            </span>
-                          </div>
-                        </div>
-                        {/* Dashed separator line */}
-                        <div className="w-full" style={{ borderTop: '1px dashed var(--border, #e5e5e5)' }} />
-                      </div>
-                      <p className="text-xs font-normal text-muted-foreground" style={{ fontFamily: '"Geist", sans-serif' }}>Last activity 26/09/24</p>
-                    </div>
-                    <button
-                      type="button"
-                      className="flex w-fit items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-blue-500 shadow-sm hover:bg-accent/50"
-                      style={{ fontFamily: '"Geist", sans-serif' }}
-                    >
-                      See details
-                    </button>
-                  </div>
-                </div>
-
-                {/* Launch campaigns — blue gradient + illustration */}
-                <div
-                  className="relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl"
-                  style={{
-                    backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 100%), linear-gradient(90deg, #0c63f8 0%, #0c63f8 100%)',
-                    border: '1px solid rgba(2,132,199,0.6)'
-                  }}
-                >
-                  {/* Stars pattern background */}
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute -left-[205px] -top-3 size-[500px] opacity-10"
-                    style={{
-                      backgroundImage: `url('${figmaCampaignStarsBg}')`,
-                      backgroundSize: '500px 500px',
-                    }}
-                  />
-                  {/* Star stroke decoration */}
-                  <img
-                    src={figmaCampaignStarStroke}
-                    alt=""
-                    className="absolute right-[2px] top-[22px] size-[22px]"
-                    style={{ transform: 'rotate(77.32deg)' }}
-                    aria-hidden="true"
-                  />
-                  <div className="relative z-[1] mx-auto flex w-[225px] flex-col items-center gap-[21px] pt-[19px]">
-                    <div className="flex w-full flex-col items-end gap-2">
-                      <h3 className="w-full text-lg font-bold leading-7 text-white" style={{ fontFamily: '"Geist", sans-serif' }}>
-                        Launch campaigns, promote your property
-                      </h3>
-                      <p className="w-full text-xs font-normal leading-4 text-[#e5e7eb]" style={{ fontFamily: '"Geist", sans-serif' }}>
-                        Drive bookings and boost visibility with tailored campaign launches.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-center rounded-lg border border-border bg-background px-6 py-2.5 text-sm font-medium text-blue-500 shadow-sm hover:bg-accent"
-                      style={{ fontFamily: '"Geist", sans-serif' }}
-                    >
-                      Create Campaign
-                    </button>
-                  </div>
-                  <div className="relative z-[1] mt-auto w-full">
-                    <img
-                      src={figmaCampaignPackIllustration}
-                      alt=""
-                      className="h-[250px] w-full object-cover object-top"
-                    />
-                  </div>
-                </div>
+              <div className="flex h-full min-h-0 w-[289px] shrink-0 flex-col overflow-y-auto overflow-x-hidden border-l border-border bg-background p-4">
+                <img
+                  src="/assets/campaign-sidebar.png"
+                  alt="Campaign sidebar"
+                  className="w-full h-auto object-contain"
+                  style={{ borderRadius: '0px' }}
+                />
               </div>
             </div>
             </div>
@@ -3597,113 +3741,109 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               <div style={{ flex: 3 }} />
             </div>
 
-            {/* Reviews Filter Bar */}
+            {/* Reviews Filter Bar — right-aligned, matching Figma */}
             <div style={{
-              height: '68px',
-              padding: '0 24px',
+              padding: '16px 24px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
+              justifyContent: 'flex-end',
               borderBottom: `1px solid ${colors.border}`,
               backgroundColor: colors.bg,
             }}>
-              {/* Search Input */}
-              <div style={{
-                width: '320px',
-                height: '36px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '0 8px',
-                border: `1px solid ${colors.border}`,
-                borderRadius: '8px',
-                backgroundColor: colors.bg,
-                boxShadow: '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search Reviews"
-                  style={{
-                    flex: 1,
-                    border: 'none',
-                    outline: 'none',
-                    fontSize: '14px',
-                    color: colors.textPrimary,
-                    backgroundColor: 'transparent',
-                    fontFamily: '"Geist", sans-serif'
-                  }}
-                />
-                <div style={{
-                  padding: '2px 6px',
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  color: colors.textSecondary,
-                  fontFamily: '"Inter", sans-serif',
-                  letterSpacing: '0.48px',
-                  textTransform: 'uppercase'
-                }}>⌘K</div>
-              </div>
-
-              {/* Filter Dropdowns */}
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-              <div style={{ position: 'relative' }}>
-                <select style={{
-                  padding: '6px 32px 6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px',
-                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white', color: colors.textPrimary,
-                  fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif', cursor: 'pointer',
-                  appearance: 'none', outline: 'none', minWidth: '100px'
-                }}>
-                  <option value="">City</option>
-                  <option value="London">London</option>
-                </select>
-                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
-              </div>
-              <div style={{ position: 'relative' }}>
-                <select style={{
-                  padding: '6px 32px 6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px',
-                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white', color: colors.textPrimary,
-                  fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif', cursor: 'pointer',
-                  appearance: 'none', outline: 'none', minWidth: '100px'
-                }}>
-                  <option value="">Date</option>
-                </select>
-                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
-              </div>
-              <div style={{ position: 'relative' }}>
-                <select style={{
-                  padding: '6px 32px 6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px',
-                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white', color: colors.textPrimary,
-                  fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif', cursor: 'pointer',
-                  appearance: 'none', outline: 'none', minWidth: '100px'
-                }}>
-                  <option value="">Ratings</option>
-                  <option value="5">5 Stars</option>
-                  <option value="4">4 Stars</option>
-                  <option value="3">3 Stars</option>
-                  <option value="2">2 Stars</option>
-                  <option value="1">1 Star</option>
-                </select>
-                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
-              </div>
-              <div style={{ position: 'relative' }}>
-                <select style={{
-                  padding: '6px 32px 6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px',
-                  background: isDarkMode ? 'rgba(10, 10, 10, 1)' : 'white', color: colors.textPrimary,
-                  fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif', cursor: 'pointer',
-                  appearance: 'none', outline: 'none', minWidth: '100px'
-                }}>
-                  <option value="">Source</option>
-                  <option value="Google">Google</option>
-                  <option value="Facebook">Facebook</option>
-                  <option value="Ambassador">Ambassador</option>
-                </select>
-                <img src="https://storage.googleapis.com/storage.magicpath.ai/user/374800043472998400/figma-assets/bdac8b93-a7aa-419c-bf92-50e0ad68ec5c.svg" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', width: '16px', pointerEvents: 'none' }} />
-              </div>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flex: 1, maxWidth: '801px' }}>
+                {/* City */}
+                <div style={{ position: 'relative', width: '94px', flexShrink: 0 }}>
+                  <select style={{
+                    width: '100%', padding: '6px 32px 6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px',
+                    background: isDarkMode ? colors.bg : 'white', color: colors.sidebarForeground,
+                    fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif', cursor: 'pointer',
+                    appearance: 'none', outline: 'none'
+                  }}>
+                    <option value="">City</option>
+                    <option value="London">London</option>
+                    <option value="Manchester">Manchester</option>
+                    <option value="Edinburgh">Edinburgh</option>
+                  </select>
+                  <ChevronDown size={20} color={colors.sidebarForeground} strokeWidth={1.5} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                </div>
+                {/* Listing */}
+                <div style={{ position: 'relative', width: '167px', flexShrink: 0 }}>
+                  <select style={{
+                    width: '100%', padding: '6px 32px 6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px',
+                    background: isDarkMode ? colors.bg : 'white', color: colors.sidebarForeground,
+                    fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif', cursor: 'pointer',
+                    appearance: 'none', outline: 'none'
+                  }}>
+                    <option value="">Listing</option>
+                  </select>
+                  <ChevronDown size={20} color={colors.sidebarForeground} strokeWidth={1.5} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                </div>
+                {/* Rating */}
+                <div style={{ position: 'relative', width: '94px', flexShrink: 0 }}>
+                  <select style={{
+                    width: '100%', padding: '6px 32px 6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px',
+                    background: isDarkMode ? colors.bg : 'white', color: colors.sidebarForeground,
+                    fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif', cursor: 'pointer',
+                    appearance: 'none', outline: 'none'
+                  }}>
+                    <option value="">Rating</option>
+                    <option value="5">5 Stars</option>
+                    <option value="4">4 Stars</option>
+                    <option value="3">3 Stars</option>
+                    <option value="2">2 Stars</option>
+                    <option value="1">1 Star</option>
+                  </select>
+                  <ChevronDown size={20} color={colors.sidebarForeground} strokeWidth={1.5} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                </div>
+                {/* Source */}
+                <div style={{ position: 'relative', width: '94px', flexShrink: 0 }}>
+                  <select style={{
+                    width: '100%', padding: '6px 32px 6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px',
+                    background: isDarkMode ? colors.bg : 'white', color: colors.sidebarForeground,
+                    fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif', cursor: 'pointer',
+                    appearance: 'none', outline: 'none'
+                  }}>
+                    <option value="">Source</option>
+                    <option value="Google">Google</option>
+                    <option value="Facebook">Facebook</option>
+                    <option value="Ambassador">Ambassador</option>
+                  </select>
+                  <ChevronDown size={20} color={colors.sidebarForeground} strokeWidth={1.5} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                </div>
+                {/* Date Picker — shadcn */}
+                <Popover open={reviewsDateOpen} onOpenChange={setReviewsDateOpen}>
+                  <PopoverTrigger asChild>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setReviewsDateOpen(prev => !prev); } }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        width: '260px', flexShrink: 0, height: '34px', padding: '6px 12px',
+                        border: `1px solid ${colors.border}`, borderRadius: '8px',
+                        background: isDarkMode ? colors.bg : 'white',
+                        boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)',
+                        cursor: 'pointer', outline: 'none', boxSizing: 'border-box'
+                      }}
+                    >
+                      <Calendar size={16} color={colors.textSecondary} strokeWidth={1.5} style={{ flexShrink: 0 }} />
+                      <span style={{
+                        flex: 1, textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif',
+                        color: reviewsDate ? colors.sidebarForeground : colors.textSecondary
+                      }}>
+                        {reviewsDate ? reviewsDate.toLocaleDateString() : 'Date'}
+                      </span>
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[260px] overflow-hidden p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={reviewsDate}
+                      onSelect={(date) => { setReviewsDate(date); setReviewsDateOpen(false); }}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
