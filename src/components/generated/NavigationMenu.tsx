@@ -2926,7 +2926,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                         )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px', lineHeight: '16px' }}>
-                        <span style={{ fontFamily: '"Geist Mono", monospace', fontWeight: 600, color: colors.textPrimary }}>{card.amount}</span>
+                        <span style={{ fontFamily: '"Geist Mono", monospace', fontWeight: 400, color: colors.textPrimary }}>{card.amount}</span>
                         <span style={{ color: colors.textSecondary, fontFamily: '"Geist", sans-serif', fontWeight: 400 }}>·</span>
                         <span style={{ color: colors.textSecondary, fontFamily: '"Geist", sans-serif', fontWeight: 400 }}>{card.count}</span>
                       </div>
@@ -3102,8 +3102,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: Math.min(idx * 0.02, 0.3), ease: [0.4, 0, 0.2, 1] }}
-                        style={{ borderBottom: `1px solid ${colors.border}`, height: '56px', backgroundColor: isDarkMode ? colors.bg : '#fff', cursor: 'pointer' }}
-                        onClick={() => { setSelectedInvoice(row); setInvoiceDetailTab('booking'); }}
+                        style={{ borderBottom: `1px solid ${colors.border}`, height: '56px', backgroundColor: isDarkMode ? colors.bg : '#fff' }}
                         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDarkMode ? 'rgba(23, 23, 23, 0.6)' : 'rgba(250, 250, 250, 0.85)'; }}
                         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDarkMode ? colors.bg : '#fff'; }}
                       >
@@ -3213,234 +3212,6 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               </div>
             </footer>
 
-            {/* Invoice Detail Sidebar */}
-            <AnimatePresence>
-              {selectedInvoice && (
-                <>
-                  {/* Overlay — covers entire page including sidebar */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    onClick={() => setSelectedInvoice(null)}
-                    style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(23,23,23,0.1)', zIndex: 50 }}
-                  />
-                  {/* Sidebar panel */}
-                  <motion.div
-                    initial={{ x: '100%' }}
-                    animate={{ x: 0 }}
-                    exit={{ x: '100%' }}
-                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                    style={{
-                      position: 'fixed', top: '16px', right: '16px', bottom: '16px',
-                      width: '720px', maxWidth: 'calc(100% - 32px)',
-                      backgroundColor: isDarkMode ? '#171717' : 'white',
-                      borderRadius: '20px',
-                      boxShadow: '0px 0px 0px 1px rgba(51,51,51,0.04), 0px 1px 1px 0.5px rgba(51,51,51,0.04), 0px 6px 6px -3px rgba(51,51,51,0.04), 0px 12px 12px -6px rgba(51,51,51,0.04), 0px 24px 24px -12px rgba(51,51,51,0.04)',
-                      zIndex: 51, display: 'flex', flexDirection: 'column', overflow: 'hidden'
-                    }}
-                  >
-                    {/* Header */}
-                    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ display: 'flex', gap: '12px' }}>
-                            <button type="button" onClick={() => {
-                              const curIdx = sortedInvoicesData.findIndex((r: any) => r.invoiceNumber === selectedInvoice.invoiceNumber);
-                              if (curIdx > 0) setSelectedInvoice(sortedInvoicesData[curIdx - 1]);
-                            }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', border: `1px solid ${colors.border}`, borderRadius: '8px', background: isDarkMode ? '#171717' : 'white', cursor: 'pointer', boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)' }}>
-                              <ChevronLeft size={16} color={colors.textPrimary} strokeWidth={2} />
-                            </button>
-                            <button type="button" onClick={() => {
-                              const curIdx = sortedInvoicesData.findIndex((r: any) => r.invoiceNumber === selectedInvoice.invoiceNumber);
-                              if (curIdx < sortedInvoicesData.length - 1) setSelectedInvoice(sortedInvoicesData[curIdx + 1]);
-                            }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', border: `1px solid ${colors.border}`, borderRadius: '8px', background: isDarkMode ? '#171717' : 'white', cursor: 'pointer', boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)' }}>
-                              <ChevronRight size={16} color={colors.textPrimary} strokeWidth={2} />
-                            </button>
-                          </div>
-                          <span style={{ fontSize: '18px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', lineHeight: '28px' }}>#{selectedInvoice.invoiceNumber}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                          {getStatusBadge(selectedInvoice.status)}
-                          <button type="button" onClick={() => setSelectedInvoice(null)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', border: `1px solid ${colors.border}`, borderRadius: '8px', background: isDarkMode ? '#171717' : 'white', cursor: 'pointer', boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)' }}>
-                            <X size={16} color={colors.textPrimary} strokeWidth={2} />
-                          </button>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <button type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px', background: isDarkMode ? '#171717' : 'white', cursor: 'pointer' }}>
-                          <Hand size={20} color={colors.textPrimary} strokeWidth={1.5} />
-                          <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Inter", sans-serif', letterSpacing: '-0.084px' }}>Raise a request</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Lead Summary section header */}
-                    <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Lead Summary</span>
-                    </div>
-
-                    {/* Lead Summary data */}
-                    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? '#171717' : 'white' }}>
-                      {[
-                        ['Name', 'Sakshi Surve'],
-                        ['Email', 'sakshisurve53@gmail.com'],
-                        ['Phone', '+917773901983'],
-                      ].map(([label, value]) => (
-                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
-                          <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
-                          <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>{value}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Tabs */}
-                    <div style={{ display: 'flex', borderBottom: `1px solid ${colors.border}`, padding: '0 16px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
-                      {(['booking', 'student', 'invoices'] as const).map((tab) => (
-                        <button key={tab} type="button" onClick={() => setInvoiceDetailTab(tab)} style={{
-                          padding: '14px 8px', fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif',
-                          color: invoiceDetailTab === tab ? (isDarkMode ? '#e5e5e5' : '#171717') : colors.textSecondary,
-                          borderBottom: invoiceDetailTab === tab ? '2px solid #171717' : '2px solid transparent',
-                          background: 'none', border: 'none', borderBottomWidth: '2px', borderBottomStyle: 'solid',
-                          borderBottomColor: invoiceDetailTab === tab ? (isDarkMode ? '#e5e5e5' : '#171717') : 'transparent',
-                          cursor: 'pointer', whiteSpace: 'nowrap'
-                        }}>
-                          {tab === 'booking' ? 'Booking Details' : tab === 'student' ? 'Student Details' : 'Invoices'}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Tab content — scrollable */}
-                    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 16px 16px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
-                      {invoiceDetailTab === 'booking' && (
-                        <>
-                          {[0, 1].map((cardIdx) => (
-                            <div key={cardIdx} style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden' }}>
-                              <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa' }}>
-                                <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Lead Details</span>
-                              </div>
-                              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
-                                {[
-                                  ['Property Name', 'Southall And Soul, London'],
-                                  ['Room Type', 'Nook'],
-                                  ['Tenure Length', '02/7/2025'],
-                                  ['Rent ( per week)', '1050 GBP'],
-                                ].map(([label, value]) => (
-                                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
-                                    <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
-                                    <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: label === 'Tenure Length' || label === 'Rent ( per week)' ? '"Geist Mono", monospace' : '"Geist", sans-serif' }}>{value}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </>
-                      )}
-                      {invoiceDetailTab === 'student' && (
-                        <>
-                          {/* Student Details */}
-                          <div style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden' }}>
-                            <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa' }}>
-                              <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Student Details</span>
-                            </div>
-                            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
-                              {[
-                                ['DOB', '02/7/2025'],
-                                ['Gender', 'Female'],
-                                ['Nationality', 'India'],
-                                ['Address line 1', 'Pune'],
-                                ['Address line 2', '--'],
-                                ['City', '--'],
-                                ['State/Province', 'Maharashtra'],
-                                ['Country', 'India'],
-                                ['ZIP code', '411015'],
-                              ].map(([label, value]) => (
-                                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
-                                  <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
-                                  <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: label === 'DOB' || label === 'ZIP code' ? '"Geist Mono", monospace' : '"Geist", sans-serif' }}>{value}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          {/* Emergency Contact Details */}
-                          <div style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden' }}>
-                            <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa' }}>
-                              <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Emergency Contact Details</span>
-                            </div>
-                            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
-                              {[
-                                ['Name', 'Siddhi Surve'],
-                                ['Relationship', 'Sister'],
-                                ['Email', 'siddhisurve098@gmail.com'],
-                                ['Phone Number', '+918080973179'],
-                              ].map(([label, value]) => (
-                                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
-                                  <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
-                                  <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>{value}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          {/* Guarantor Details */}
-                          <div style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden' }}>
-                            <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa' }}>
-                              <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Guarantor Details</span>
-                            </div>
-                            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#171717' : 'white' }}>
-                              {[
-                                ['Name', 'Siddhi Surve'],
-                                ['Relationship', 'Sister'],
-                                ['Email', 'siddhisurve098@gmail.com'],
-                                ['Phone Number', '+918080973179'],
-                              ].map(([label, value]) => (
-                                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
-                                  <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
-                                  <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>{value}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </>
-                      )}
-                      {invoiceDetailTab === 'invoices' && (
-                        <div style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden' }}>
-                          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                              <tr style={{ backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa' }}>
-                                <th style={{ padding: '10px 20px', textAlign: 'left', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Invoice Number</th>
-                                <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Date</th>
-                                <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Total Amount</th>
-                                <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Due Date</th>
-                                <th style={{ padding: '10px 20px', textAlign: 'center', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Status</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {[
-                                { num: 'INV-025708', date: '02/7/2025', amount: 'GBP 117.09', due: '12/1/2025' },
-                                { num: 'INV-025709', date: '02/7/2025', amount: 'GBP 125.50', due: '12/2/2025' },
-                                { num: 'INV-025710', date: '02/7/2025', amount: 'GBP 132.75', due: '12/3/2025' },
-                                { num: 'INV-025711', date: '02/7/2025', amount: 'GBP 140.20', due: '12/4/2025' },
-                              ].map((inv) => (
-                                <tr key={inv.num} style={{ borderBottom: `1px solid ${colors.border}` }}>
-                                  <td style={{ padding: '16px 20px', fontSize: '14px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: '#3F83F8' }}># {inv.num}</td>
-                                  <td style={{ padding: '16px 8px', fontSize: '14px', fontFamily: '"Geist Mono", monospace', fontWeight: 400, color: colors.textSecondary, textAlign: 'center' }}>{inv.date}</td>
-                                  <td style={{ padding: '16px 8px', fontSize: '14px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textPrimary, textAlign: 'center' }}>{inv.amount}</td>
-                                  <td style={{ padding: '16px 8px', fontSize: '14px', fontFamily: '"Geist Mono", monospace', fontWeight: 400, color: colors.textSecondary, textAlign: 'center' }}>{inv.due}</td>
-                                  <td style={{ padding: '16px 20px', textAlign: 'center' }}>
-                                    <span style={{ display: 'inline-block', padding: '2px 6px', borderRadius: '6px', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)', textTransform: 'uppercase', lineHeight: '16px' }}>SENT</span>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
           </>
         ) : activeNavigation === 'Campaigns' ? (
             <PageSection pageKey="Campaigns">
@@ -3813,10 +3584,9 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 {/* Date Picker — shadcn */}
                 <Popover open={reviewsDateOpen} onOpenChange={setReviewsDateOpen}>
                   <PopoverTrigger asChild>
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setReviewsDateOpen(prev => !prev); } }}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setReviewsDateOpen(prev => !prev); }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: '8px',
                         width: '260px', flexShrink: 0, height: '34px', padding: '6px 12px',
@@ -3834,9 +3604,9 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                       }}>
                         {reviewsDate ? reviewsDate.toLocaleDateString() : 'Date'}
                       </span>
-                    </div>
+                    </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[260px] overflow-hidden p-0" align="start">
+                  <PopoverContent className="w-auto overflow-hidden p-0" align="start" sideOffset={6}>
                     <CalendarComponent
                       mode="single"
                       selected={reviewsDate}
@@ -5379,7 +5149,8 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: idx * 0.03, ease: [0.4, 0, 0.2, 1] }}
-                        style={{ borderBottom: `1px solid ${colors.border}`, height: '56px', backgroundColor: colors.bg }}
+                        style={{ borderBottom: `1px solid ${colors.border}`, height: '56px', backgroundColor: colors.bg, cursor: 'pointer' }}
+                        onClick={() => { setSelectedInvoice(item); setInvoiceDetailTab('booking'); }}
                         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = isDarkMode ? 'rgba(23, 23, 23, 0.6)' : 'rgba(250, 250, 250, 0.7)'; }}
                         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = colors.bg; }}
                       >
@@ -5469,6 +5240,234 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 </button>
               </div>
             </footer>
+
+            {/* Booking Detail Sidebar */}
+            <AnimatePresence>
+              {selectedInvoice && (
+                <>
+                  {/* Overlay — covers entire page including sidebar */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    onClick={() => setSelectedInvoice(null)}
+                    style={{ position: 'fixed', inset: 0, backgroundColor: isDarkMode ? 'rgba(0,0,0,0.5)' : 'rgba(23,23,23,0.1)', zIndex: 50 }}
+                  />
+                  {/* Sidebar panel */}
+                  <motion.div
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
+                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                    style={{
+                      position: 'fixed', top: '16px', right: '16px', bottom: '16px',
+                      width: '720px', maxWidth: 'calc(100% - 32px)',
+                      backgroundColor: isDarkMode ? '#0a0a0a' : 'white',
+                      borderRadius: '20px',
+                      boxShadow: isDarkMode ? '0px 0px 0px 1px rgba(255,255,255,0.06), 0px 24px 24px -12px rgba(0,0,0,0.4)' : '0px 0px 0px 1px rgba(51,51,51,0.04), 0px 1px 1px 0.5px rgba(51,51,51,0.04), 0px 6px 6px -3px rgba(51,51,51,0.04), 0px 12px 12px -6px rgba(51,51,51,0.04), 0px 24px 24px -12px rgba(51,51,51,0.04)',
+                      zIndex: 51, display: 'flex', flexDirection: 'column', overflow: 'hidden'
+                    }}
+                  >
+                    {/* Header */}
+                    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#0a0a0a' : 'white', flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ display: 'flex', gap: '12px' }}>
+                            <button type="button" onClick={() => {
+                              const curIdx = currentBookingsData.findIndex((r: any) => r.bookingId === selectedInvoice.bookingId);
+                              if (curIdx > 0) setSelectedInvoice(currentBookingsData[curIdx - 1]);
+                            }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', border: `1px solid ${colors.border}`, borderRadius: '8px', background: isDarkMode ? '#141414' : 'white', cursor: 'pointer', boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)' }}>
+                              <ChevronLeft size={16} color={colors.textPrimary} strokeWidth={2} />
+                            </button>
+                            <button type="button" onClick={() => {
+                              const curIdx = currentBookingsData.findIndex((r: any) => r.bookingId === selectedInvoice.bookingId);
+                              if (curIdx < currentBookingsData.length - 1) setSelectedInvoice(currentBookingsData[curIdx + 1]);
+                            }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', border: `1px solid ${colors.border}`, borderRadius: '8px', background: isDarkMode ? '#141414' : 'white', cursor: 'pointer', boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)' }}>
+                              <ChevronRight size={16} color={colors.textPrimary} strokeWidth={2} />
+                            </button>
+                          </div>
+                          <span style={{ fontSize: '18px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Geist", sans-serif', lineHeight: '28px' }}>#{selectedInvoice.bookingId}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          {getStatusBadge(selectedInvoice.status)}
+                          <button type="button" onClick={() => setSelectedInvoice(null)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px', border: `1px solid ${colors.border}`, borderRadius: '8px', background: isDarkMode ? '#141414' : 'white', cursor: 'pointer', boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.05)' }}>
+                            <X size={16} color={colors.textPrimary} strokeWidth={2} />
+                          </button>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <button type="button" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', border: `1px solid ${colors.border}`, borderRadius: '8px', background: isDarkMode ? '#141414' : 'white', cursor: 'pointer' }}>
+                          <Hand size={20} color={colors.textPrimary} strokeWidth={1.5} />
+                          <span style={{ fontSize: '14px', fontWeight: 500, color: colors.textPrimary, fontFamily: '"Inter", sans-serif', letterSpacing: '-0.084px' }}>Raise a request</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Lead Summary section header */}
+                    <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa', flexShrink: 0 }}>
+                      <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Lead Summary</span>
+                    </div>
+
+                    {/* Lead Summary data */}
+                    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? '#0a0a0a' : 'white', flexShrink: 0 }}>
+                      {[
+                        ['Name', selectedInvoice.studentName || 'Sakshi Surve'],
+                        ['Email', 'sakshisurve53@gmail.com'],
+                        ['Phone', '+917773901983'],
+                      ].map(([label, value]) => (
+                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
+                          <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
+                          <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>{value}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Tabs */}
+                    <div style={{ display: 'flex', borderBottom: `1px solid ${colors.border}`, padding: '0 16px', backgroundColor: isDarkMode ? '#0a0a0a' : 'white', flexShrink: 0 }}>
+                      {(['booking', 'student', 'invoices'] as const).map((tab) => (
+                        <button key={tab} type="button" onClick={() => setInvoiceDetailTab(tab)} style={{
+                          padding: '14px 8px', fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif',
+                          color: invoiceDetailTab === tab ? (isDarkMode ? '#e5e5e5' : '#171717') : colors.textSecondary,
+                          background: 'none', border: 'none', borderBottomWidth: '2px', borderBottomStyle: 'solid',
+                          borderBottomColor: invoiceDetailTab === tab ? (isDarkMode ? '#e5e5e5' : '#171717') : 'transparent',
+                          cursor: 'pointer', whiteSpace: 'nowrap'
+                        }}>
+                          {tab === 'booking' ? 'Booking Details' : tab === 'student' ? 'Student Details' : 'Invoices'}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Tab content — scrollable */}
+                    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 16px 16px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#0a0a0a' : 'white' }}>
+                      {invoiceDetailTab === 'booking' && (
+                        <>
+                          {[0, 1].map((cardIdx) => (
+                            <div key={cardIdx} style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden', flexShrink: 0 }}>
+                              <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa', borderBottom: `1px solid ${colors.border}` }}>
+                                <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Lead Details</span>
+                              </div>
+                              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#111111' : 'white' }}>
+                                {[
+                                  ['Property Name', selectedInvoice.listing || 'Southall And Soul, London'],
+                                  ['Room Type', 'Nook'],
+                                  ['Tenure Length', selectedInvoice.tenure || '02/7/2025'],
+                                  ['Rent ( per week)', '1050 GBP'],
+                                ].map(([label, value]) => (
+                                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
+                                    <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
+                                    <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: label === 'Tenure Length' || label === 'Rent ( per week)' ? '"Geist Mono", monospace' : '"Geist", sans-serif' }}>{value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                      {invoiceDetailTab === 'student' && (
+                        <>
+                          {/* Student Details */}
+                          <div style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden', flexShrink: 0 }}>
+                            <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa', borderBottom: `1px solid ${colors.border}` }}>
+                              <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Student Details</span>
+                            </div>
+                            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#111111' : 'white' }}>
+                              {[
+                                ['DOB', '02/7/2025'],
+                                ['Gender', 'Female'],
+                                ['Nationality', 'India'],
+                                ['Address line 1', 'Pune'],
+                                ['Address line 2', '--'],
+                                ['City', '--'],
+                                ['State/Province', 'Maharashtra'],
+                                ['Country', 'India'],
+                                ['ZIP code', '411015'],
+                              ].map(([label, value]) => (
+                                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
+                                  <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
+                                  <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: label === 'DOB' || label === 'ZIP code' ? '"Geist Mono", monospace' : '"Geist", sans-serif' }}>{value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          {/* Emergency Contact Details */}
+                          <div style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden', flexShrink: 0 }}>
+                            <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa', borderBottom: `1px solid ${colors.border}` }}>
+                              <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Emergency Contact Details</span>
+                            </div>
+                            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#111111' : 'white' }}>
+                              {[
+                                ['Name', 'Siddhi Surve'],
+                                ['Relationship', 'Sister'],
+                                ['Email', 'siddhisurve098@gmail.com'],
+                                ['Phone Number', '+918080973179'],
+                              ].map(([label, value]) => (
+                                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
+                                  <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
+                                  <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>{value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          {/* Guarantor Details */}
+                          <div style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden', flexShrink: 0 }}>
+                            <div style={{ padding: '6px 20px', backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa', borderBottom: `1px solid ${colors.border}` }}>
+                              <span style={{ fontSize: '12px', fontWeight: 500, fontFamily: '"Geist Mono", monospace', color: isDarkMode ? '#e5e5e5' : '#171717', textTransform: 'uppercase', letterSpacing: '0.48px' }}>Guarantor Details</span>
+                            </div>
+                            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: isDarkMode ? '#111111' : 'white' }}>
+                              {[
+                                ['Name', 'Siddhi Surve'],
+                                ['Relationship', 'Sister'],
+                                ['Email', 'siddhisurve098@gmail.com'],
+                                ['Phone Number', '+918080973179'],
+                              ].map(([label, value]) => (
+                                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', lineHeight: '20px' }}>
+                                  <span style={{ fontWeight: 400, color: isDarkMode ? '#e5e5e5' : '#171717', fontFamily: '"Geist", sans-serif' }}>{label}</span>
+                                  <span style={{ fontWeight: 500, color: colors.textSecondary, fontFamily: '"Geist", sans-serif' }}>{value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      {invoiceDetailTab === 'invoices' && (
+                        <div style={{ border: `1px solid ${colors.border}`, borderRadius: '16px', overflow: 'hidden', flexShrink: 0 }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                              <tr style={{ backgroundColor: isDarkMode ? '#1a1a1a' : '#fafafa' }}>
+                                <th style={{ padding: '10px 20px', textAlign: 'left', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Invoice Number</th>
+                                <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Date</th>
+                                <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Total Amount</th>
+                                <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Due Date</th>
+                                <th style={{ padding: '10px 20px', textAlign: 'center', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.48px', borderBottom: `1px solid ${colors.border}` }}>Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {[
+                                { num: 'INV-025708', date: '02/7/2025', amount: 'GBP 117.09', due: '12/1/2025' },
+                                { num: 'INV-025709', date: '02/7/2025', amount: 'GBP 125.50', due: '12/2/2025' },
+                                { num: 'INV-025710', date: '02/7/2025', amount: 'GBP 132.75', due: '12/3/2025' },
+                                { num: 'INV-025711', date: '02/7/2025', amount: 'GBP 140.20', due: '12/4/2025' },
+                              ].map((inv) => (
+                                <tr key={inv.num} style={{ borderBottom: `1px solid ${colors.border}` }}>
+                                  <td style={{ padding: '16px 20px', fontSize: '14px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: '#3F83F8' }}># {inv.num}</td>
+                                  <td style={{ padding: '16px 8px', fontSize: '14px', fontFamily: '"Geist Mono", monospace', fontWeight: 400, color: colors.textSecondary, textAlign: 'center' }}>{inv.date}</td>
+                                  <td style={{ padding: '16px 8px', fontSize: '14px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textPrimary, textAlign: 'center' }}>{inv.amount}</td>
+                                  <td style={{ padding: '16px 8px', fontSize: '14px', fontFamily: '"Geist Mono", monospace', fontWeight: 400, color: colors.textSecondary, textAlign: 'center' }}>{inv.due}</td>
+                                  <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                                    <span style={{ display: 'inline-block', padding: '2px 6px', borderRadius: '6px', fontSize: '12px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)', textTransform: 'uppercase', lineHeight: '16px' }}>SENT</span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </>
         ) : activeNavigation === 'AccountDetails' ? (
           <PageSection pageKey="AccountDetails">
