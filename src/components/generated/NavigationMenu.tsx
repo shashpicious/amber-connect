@@ -45,6 +45,14 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   const [invoiceAgeBucket, setInvoiceAgeBucket] = useState('');
   const [invoiceSortKey, setInvoiceSortKey] = useState<'invoiceDate' | 'total' | 'balance' | 'dueDate' | ''>('');
   const [invoiceSortDir, setInvoiceSortDir] = useState<'asc' | 'desc'>('asc');
+  const [listingsSortKey, setListingsSortKey] = useState<'property' | 'status' | 'price' | ''>('');
+  const [listingsSortDir, setListingsSortDir] = useState<'asc' | 'desc'>('asc');
+  const [reviewsSortKey, setReviewsSortKey] = useState<'listing' | 'rating' | 'studentName' | 'source' | 'date' | ''>('');
+  const [reviewsSortDir, setReviewsSortDir] = useState<'asc' | 'desc'>('asc');
+  const [bookingsSortKey, setBookingsSortKey] = useState<'studentName' | 'listing' | 'status' | 'moveInDate' | 'tenure' | ''>('');
+  const [bookingsSortDir, setBookingsSortDir] = useState<'asc' | 'desc'>('asc');
+  const [teamsSortKey, setTeamsSortKey] = useState<'name' | 'status' | 'role' | ''>('');
+  const [teamsSortDir, setTeamsSortDir] = useState<'asc' | 'desc'>('asc');
   const [subPartnersPage, setSubPartnersPage] = useState(1);
   const [subPartnersStatusFilter, setSubPartnersStatusFilter] = useState('');
   const [subPartnersBookingTypeFilter, setSubPartnersBookingTypeFilter] = useState('');
@@ -75,7 +83,32 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [teamModalMember, setTeamModalMember] = useState<{ name: string; email: string; role: string } | null>(null);
   const [themePreference, setThemePreference] = useState<'light' | 'dark' | 'system'>(initialMode === 'dark' ? 'dark' : 'light');
+  const [searchFocused, setSearchFocused] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const listingsSearchRef = useRef<HTMLInputElement>(null);
+  const invoiceSearchRef = useRef<HTMLInputElement>(null);
+  const reviewsSearchRef = useRef<HTMLInputElement>(null);
+  const bookingsSearchRef = useRef<HTMLInputElement>(null);
+  const teamsSearchRef = useRef<HTMLInputElement>(null);
+
+  // ⌘K shortcut — focus the search input on the active page
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        const refMap: Record<string, React.RefObject<HTMLInputElement | null>> = {
+          Listings: listingsSearchRef,
+          Invoices: invoiceSearchRef,
+          Reviews: reviewsSearchRef,
+          Bookings: bookingsSearchRef,
+          Teams: teamsSearchRef,
+        };
+        refMap[activeNavigation]?.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [activeNavigation]);
 
   // Text scramble effect
   useEffect(() => {
@@ -1607,6 +1640,29 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     setInvoicesPage(1);
   };
 
+  const toggleListingsSort = (key: typeof listingsSortKey) => {
+    if (listingsSortKey === key) { setListingsSortDir(prev => prev === 'asc' ? 'desc' : 'asc'); }
+    else { setListingsSortKey(key); setListingsSortDir('asc'); }
+    setListingsPage(1);
+  };
+
+  const toggleReviewsSort = (key: typeof reviewsSortKey) => {
+    if (reviewsSortKey === key) { setReviewsSortDir(prev => prev === 'asc' ? 'desc' : 'asc'); }
+    else { setReviewsSortKey(key); setReviewsSortDir('asc'); }
+    setReviewsPage(1);
+  };
+
+  const toggleBookingsSort = (key: typeof bookingsSortKey) => {
+    if (bookingsSortKey === key) { setBookingsSortDir(prev => prev === 'asc' ? 'desc' : 'asc'); }
+    else { setBookingsSortKey(key); setBookingsSortDir('asc'); }
+    setBookingsPage(1);
+  };
+
+  const toggleTeamsSort = (key: typeof teamsSortKey) => {
+    if (teamsSortKey === key) { setTeamsSortDir(prev => prev === 'asc' ? 'desc' : 'asc'); }
+    else { setTeamsSortKey(key); setTeamsSortDir('asc'); }
+  };
+
   const invoicesTotalItems = sortedInvoicesData.length;
   const invoicesTotalPages = Math.ceil(invoicesTotalItems / invoicesItemsPerPage) || 1;
   const invoicesStartIndex = (invoicesPage - 1) * invoicesItemsPerPage;
@@ -1733,7 +1789,16 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     return true;
   });
 
-  const sortedListingsData = filteredListingsData;
+  const sortedListingsData = React.useMemo(() => {
+    if (!listingsSortKey) return filteredListingsData;
+    return [...filteredListingsData].sort((a: any, b: any) => {
+      let cmp = 0;
+      if (listingsSortKey === 'property') cmp = a.title.localeCompare(b.title);
+      else if (listingsSortKey === 'status') cmp = a.listingStatus.localeCompare(b.listingStatus);
+      else if (listingsSortKey === 'price') cmp = a.priceAmount - b.priceAmount;
+      return listingsSortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [filteredListingsData, listingsSortKey, listingsSortDir]);
 
   // Listings pagination logic
   const listingsTotalItems = sortedListingsData.length;
@@ -1780,12 +1845,24 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
   const listingsCityOptions = Array.from(new Set(listingsData.map((d: any) => d.city))).sort();
   const listingsStatusOptions = Array.from(new Set(listingsData.map((d: any) => d.listingStatus))).sort();
 
-  // Reviews pagination logic
-  const reviewsTotalItems = reviewsData.length;
+  // Reviews sort + pagination logic
+  const sortedReviewsData = React.useMemo(() => {
+    if (!reviewsSortKey) return reviewsData;
+    return [...reviewsData].sort((a: any, b: any) => {
+      let cmp = 0;
+      if (reviewsSortKey === 'listing') cmp = a.listing.localeCompare(b.listing);
+      else if (reviewsSortKey === 'rating') cmp = a.rating - b.rating;
+      else if (reviewsSortKey === 'studentName') cmp = a.studentName.localeCompare(b.studentName);
+      else if (reviewsSortKey === 'source') cmp = a.source.localeCompare(b.source);
+      else if (reviewsSortKey === 'date') { const da = new Date(a.date), db = new Date(b.date); cmp = da.getTime() - db.getTime(); }
+      return reviewsSortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [reviewsData, reviewsSortKey, reviewsSortDir]);
+  const reviewsTotalItems = sortedReviewsData.length;
   const reviewsTotalPages = Math.ceil(reviewsTotalItems / itemsPerPage);
   const reviewsStartIndex = (reviewsPage - 1) * itemsPerPage;
   const reviewsEndIndex = reviewsStartIndex + itemsPerPage;
-  const currentReviewsData = reviewsData.slice(reviewsStartIndex, reviewsEndIndex);
+  const currentReviewsData = sortedReviewsData.slice(reviewsStartIndex, reviewsEndIndex);
   const reviewsStartItem = reviewsStartIndex + 1;
   const reviewsEndItem = Math.min(reviewsEndIndex, reviewsTotalItems);
   const handleReviewsPrevious = () => { if (reviewsPage > 1) setReviewsPage(reviewsPage - 1); };
@@ -1803,12 +1880,24 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
     return pages;
   };
 
-  // Bookings pagination logic
-  const bookingsTotalItems = bookingsData.length;
+  // Bookings sort + pagination logic
+  const sortedBookingsData = React.useMemo(() => {
+    if (!bookingsSortKey) return bookingsData;
+    return [...bookingsData].sort((a: any, b: any) => {
+      let cmp = 0;
+      if (bookingsSortKey === 'studentName') cmp = a.studentName.localeCompare(b.studentName);
+      else if (bookingsSortKey === 'listing') cmp = a.listing.localeCompare(b.listing);
+      else if (bookingsSortKey === 'status') cmp = a.status.localeCompare(b.status);
+      else if (bookingsSortKey === 'moveInDate') { const da = new Date(a.moveInDate), db = new Date(b.moveInDate); cmp = da.getTime() - db.getTime(); }
+      else if (bookingsSortKey === 'tenure') cmp = parseInt(a.tenure) - parseInt(b.tenure);
+      return bookingsSortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [bookingsData, bookingsSortKey, bookingsSortDir]);
+  const bookingsTotalItems = sortedBookingsData.length;
   const bookingsTotalPages = Math.ceil(bookingsTotalItems / itemsPerPage);
   const bookingsStartIndex = (bookingsPage - 1) * itemsPerPage;
   const bookingsEndIndex = bookingsStartIndex + itemsPerPage;
-  const currentBookingsData = bookingsData.slice(bookingsStartIndex, bookingsEndIndex);
+  const currentBookingsData = sortedBookingsData.slice(bookingsStartIndex, bookingsEndIndex);
   const bookingsStartItem = bookingsStartIndex + 1;
   const bookingsEndItem = Math.min(bookingsEndIndex, bookingsTotalItems);
   const handleBookingsPrevious = () => { if (bookingsPage > 1) setBookingsPage(bookingsPage - 1); };
@@ -2453,19 +2542,22 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 alignItems: 'center',
                 gap: '6px',
                 padding: '6px 8px 6px 8px',
-                border: `1px solid ${colors.border}`,
+                border: searchFocused ? `1px solid ${colors.accent}` : `1px solid ${colors.border}`,
                 borderRadius: '8px',
                 backgroundColor: colors.inputBg,
-                boxShadow: '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
+                boxShadow: searchFocused ? `0px 0px 0px 1px ${colors.accent}` : '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
               }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <circle cx="11" cy="11" r="8" />
                   <path d="m21 21-4.35-4.35" />
                 </svg>
                 <input
+                  ref={listingsSearchRef}
                   type="text"
                   value={listingsSearchQuery}
                   onChange={(e) => { setListingsSearchQuery(e.target.value); setListingsPage(1); }}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
                   placeholder="Search by name"
                   style={{
                     flex: 1,
@@ -2571,9 +2663,9 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                       borderBottom: `1px solid ${colors.border}`,
                       height: '42px'
                     }}>
-                      <th style={{ padding: '0 16px 0 24px', textAlign: 'left', fontSize: '13px', lineHeight: '20px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Property</th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', lineHeight: '20px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Status</th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', lineHeight: '20px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Price</th>
+                      <th onClick={() => toggleListingsSort('property')} style={{ padding: '0 16px 0 24px', textAlign: 'left', fontSize: '13px', lineHeight: '20px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>Property <ArrowUpDown size={14} color={listingsSortKey === 'property' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
+                      <th onClick={() => toggleListingsSort('status')} style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', lineHeight: '20px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>Status <ArrowUpDown size={14} color={listingsSortKey === 'status' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
+                      <th onClick={() => toggleListingsSort('price')} style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', lineHeight: '20px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>Price <ArrowUpDown size={14} color={listingsSortKey === 'price' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
                       <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', lineHeight: '20px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Actions</th>
                     </tr>
                   </thead>
@@ -2834,9 +2926,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               ].map((kpi, ki) => (
                 <React.Fragment key={kpi.label}>
                   {ki > 0 && (
-                    <div style={{ width: '0', alignSelf: 'stretch', display: 'flex', alignItems: 'center' }}>
-                      <div style={{ width: '1px', height: '100%', maxHeight: '120px', backgroundImage: `repeating-linear-gradient(to bottom, ${colors.border} 0, ${colors.border} 4px, transparent 4px, transparent 8px)` }} />
-                    </div>
+                    <div style={{ width: '0px', alignSelf: 'stretch', borderLeft: `1px dashed ${colors.border}` }} />
                   )}
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', height: '120px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
@@ -2949,7 +3039,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               gap: '16px',
               flexWrap: 'wrap',
               position: 'sticky',
-              top: '58px',
+              top: '69px',
               zIndex: 11,
               flexShrink: 0,
             }}>
@@ -2960,19 +3050,22 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 alignItems: 'center',
                 gap: '6px',
                 padding: '6px 8px 6px 8px',
-                border: `1px solid ${colors.border}`,
+                border: searchFocused ? `1px solid ${colors.accent}` : `1px solid ${colors.border}`,
                 borderRadius: '8px',
                 backgroundColor: isDarkMode ? colors.bg : '#fff',
-                boxShadow: '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
+                boxShadow: searchFocused ? `0px 0px 0px 1px ${colors.accent}` : '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
               }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
                 </svg>
                 <input
+                  ref={invoiceSearchRef}
                   type="text"
                   placeholder="Invoice Number"
                   value={invoiceSearchQuery}
                   onChange={(e) => { setInvoiceSearchQuery(e.target.value); setInvoicesPage(1); }}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
                   style={{
                     flex: 1,
                     minWidth: 0,
@@ -3060,7 +3153,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 style={{ backgroundColor: isDarkMode ? colors.bg : '#fff' }}
               >
                 <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-                  <thead style={{ position: 'sticky', top: '126px', zIndex: 10 }}>
+                  <thead style={{ position: 'sticky', top: '137px', zIndex: 10 }}>
                     <tr style={{
                       backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : '#fafafa',
                       borderBottom: `1px solid ${colors.border}`,
@@ -3453,6 +3546,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
             </header>
 
             <PageSection pageKey="Reviews">
+            <div style={{ flex: 1, overflow: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
             {/* Reviews Stats Banner */}
             <div style={{
               padding: '16px 24px',
@@ -3461,6 +3555,7 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               gap: '16px',
               backgroundColor: colors.bg,
               borderBottom: `1px solid ${colors.border}`,
+              flexShrink: 0,
             }}>
               {/* Average Rating */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', height: '120px' }}>
@@ -3520,6 +3615,10 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
               justifyContent: 'flex-end',
               borderBottom: `1px solid ${colors.border}`,
               backgroundColor: colors.bg,
+              position: 'sticky',
+              top: 0,
+              zIndex: 12,
+              flexShrink: 0,
             }}>
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flex: 1, maxWidth: '801px' }}>
                 {/* City */}
@@ -3618,19 +3717,19 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
             </div>
 
             {/* Reviews Table */}
-            <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+            <div style={{ backgroundColor: colors.bg }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-                <thead>
+                <thead style={{ position: 'sticky', top: '68px', zIndex: 11 }}>
                   <tr style={{
                     backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)',
                     borderBottom: `1px solid ${colors.border}`
                   }}>
-                    <th style={{ textAlign: 'left', padding: '12px 24px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '18%' }}>LISTING</th>
-                    <th style={{ textAlign: 'left', padding: '12px 8px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '32%' }}>REVIEWS</th>
-                    <th style={{ textAlign: 'center', padding: '12px 8px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '14%' }}>RATING</th>
-                    <th style={{ textAlign: 'left', padding: '12px 8px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '14%' }}>STUDENT NAME</th>
-                    <th style={{ textAlign: 'center', padding: '12px 8px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '10%' }}>SOURCE</th>
-                    <th style={{ textAlign: 'right', padding: '12px 24px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '12%' }}>DATE</th>
+                    <th onClick={() => toggleReviewsSort('listing')} style={{ textAlign: 'left', padding: '12px 24px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '18%', backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>LISTING <ArrowUpDown size={14} color={reviewsSortKey === 'listing' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
+                    <th style={{ textAlign: 'left', padding: '12px 8px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '32%', backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>REVIEWS</th>
+                    <th onClick={() => toggleReviewsSort('rating')} style={{ textAlign: 'center', padding: '12px 8px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '14%', backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>RATING <ArrowUpDown size={14} color={reviewsSortKey === 'rating' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
+                    <th onClick={() => toggleReviewsSort('studentName')} style={{ textAlign: 'left', padding: '12px 8px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '14%', backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>STUDENT NAME <ArrowUpDown size={14} color={reviewsSortKey === 'studentName' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
+                    <th onClick={() => toggleReviewsSort('source')} style={{ textAlign: 'center', padding: '12px 8px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '10%', backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>SOURCE <ArrowUpDown size={14} color={reviewsSortKey === 'source' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
+                    <th onClick={() => toggleReviewsSort('date')} style={{ textAlign: 'right', padding: '12px 24px', fontSize: '13px', color: colors.textSecondary, fontFamily: '"Geist Mono"', fontWeight: 500, width: '12%', backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>DATE <ArrowUpDown size={14} color={reviewsSortKey === 'date' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3655,11 +3754,12 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 </tbody>
               </table>
             </div>
+            </div>{/* end scroll wrapper */}
 
             {/* Reviews Pagination Footer */}
             <footer style={{
               height: '68px', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              borderTop: `1px solid ${colors.border}`, marginTop: 'auto', backgroundColor: colors.bg
+              borderTop: `1px solid ${colors.border}`, marginTop: 'auto', backgroundColor: colors.bg, flexShrink: 0
             }}>
               <span style={{ fontSize: '14px', color: colors.textSecondary }}>Showing {reviewsStartItem} to {reviewsEndItem} of {reviewsTotalItems} entries</span>
               <div style={{ display: 'flex', gap: '4px' }}>
@@ -5009,16 +5109,19 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                 alignItems: 'center',
                 gap: '6px',
                 padding: '6px 8px 6px 8px',
-                border: `1px solid ${colors.border}`,
+                border: searchFocused ? `1px solid ${colors.accent}` : `1px solid ${colors.border}`,
                 borderRadius: '8px',
                 backgroundColor: colors.bg,
-                boxShadow: '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
+                boxShadow: searchFocused ? `0px 0px 0px 1px ${colors.accent}` : '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
               }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
                 </svg>
                 <input
+                  ref={bookingsSearchRef}
                   type="text"
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
                   placeholder="Student Name or Booking Id"
                   style={{
                     flex: 1,
@@ -5134,12 +5237,12 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                     }}>
                       <th style={{ padding: '0 8px 0 24px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Amber ID</th>
                       <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Booking ID</th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', verticalAlign: 'middle' }}>Student Name</th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Listing</th>
-                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Status</th>
+                      <th onClick={() => toggleBookingsSort('studentName')} style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', cursor: 'pointer', verticalAlign: 'middle' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>Student Name <ArrowUpDown size={14} color={bookingsSortKey === 'studentName' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
+                      <th onClick={() => toggleBookingsSort('listing')} style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>Listing <ArrowUpDown size={14} color={bookingsSortKey === 'listing' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
+                      <th onClick={() => toggleBookingsSort('status')} style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>Status <ArrowUpDown size={14} color={bookingsSortKey === 'status' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
                       <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Created At</th>
-                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Move In Date</th>
-                      <th style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)' }}>Tenure Length</th>
+                      <th onClick={() => toggleBookingsSort('moveInDate')} style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>Move In Date <ArrowUpDown size={14} color={bookingsSortKey === 'moveInDate' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
+                      <th onClick={() => toggleBookingsSort('tenure')} style={{ padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", monospace', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: '20px', borderBottom: `1px solid ${colors.border}`, backgroundColor: isDarkMode ? 'rgba(23, 23, 23, 1)' : 'rgba(250, 250, 250, 1)', cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>Tenure Length <ArrowUpDown size={14} color={bookingsSortKey === 'tenure' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -6452,16 +6555,19 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                   gap: '6px',
                   padding: '0 8px',
                   borderRadius: '8px',
-                  border: `1px solid ${colors.border}`,
+                  border: searchFocused ? `1px solid ${colors.accent}` : `1px solid ${colors.border}`,
                   backgroundColor: colors.bg,
-                  boxShadow: '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
+                  boxShadow: searchFocused ? `0px 0px 0px 1px ${colors.accent}` : '0px 1px 2px 0px rgba(10, 13, 20, 0.03)'
                 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={colors.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
                   </svg>
                   <input
+                    ref={teamsSearchRef}
                     type="text"
                     value={teamsSearchQuery}
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => setSearchFocused(false)}
                     onChange={(e) => setTeamsSearchQuery(e.target.value)}
                     placeholder="Search by name or email"
                     style={{
@@ -6497,9 +6603,9 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                       borderBottom: `1px solid ${colors.border}`,
                       height: '42px'
                     }}>
-                      <th style={{ padding: '0 16px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Partners</th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Status</th>
-                      <th style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Role</th>
+                      <th onClick={() => toggleTeamsSort('name')} style={{ padding: '0 16px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}`, cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>Partners <ArrowUpDown size={14} color={teamsSortKey === 'name' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
+                      <th onClick={() => toggleTeamsSort('status')} style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}`, cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>Status <ArrowUpDown size={14} color={teamsSortKey === 'status' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
+                      <th onClick={() => toggleTeamsSort('role')} style={{ padding: '0 8px', textAlign: 'left', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}`, cursor: 'pointer' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>Role <ArrowUpDown size={14} color={teamsSortKey === 'role' ? colors.textPrimary : colors.textSecondary} strokeWidth={2} /></span></th>
                       <th style={{ width: '140px', padding: '0 8px', textAlign: 'center', fontSize: '13px', fontFamily: '"Geist Mono", sans-serif', fontWeight: 500, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px', borderBottom: `1px solid ${colors.border}` }}>Actions</th>
                     </tr>
                   </thead>
@@ -6514,6 +6620,11 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                         if (!teamsSearchQuery) return true;
                         const q = teamsSearchQuery.toLowerCase();
                         return member.name.toLowerCase().includes(q) || member.email.toLowerCase().includes(q);
+                      })
+                      .sort((a, b) => {
+                        if (!teamsSortKey) return 0;
+                        const cmp = a[teamsSortKey].localeCompare(b[teamsSortKey]);
+                        return teamsSortDir === 'asc' ? cmp : -cmp;
                       })
                       .map((member, idx) => (
                       <motion.tr
