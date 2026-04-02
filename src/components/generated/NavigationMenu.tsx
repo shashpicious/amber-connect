@@ -5431,9 +5431,9 @@ export const NavigationMenu: React.FC<NavigationMenuProps> = ({
                       {(['booking', 'student', 'invoices'] as const).map((tab) => (
                         <button key={tab} type="button" onClick={() => setInvoiceDetailTab(tab)} style={{
                           padding: '14px 8px', fontSize: '14px', fontWeight: 500, fontFamily: '"Geist", sans-serif',
-                          color: invoiceDetailTab === tab ? (isDarkMode ? '#e5e5e5' : '#171717') : colors.textSecondary,
+                          color: invoiceDetailTab === tab ? '#3F83F8' : colors.textSecondary,
                           background: 'none', border: 'none', borderBottomWidth: '2px', borderBottomStyle: 'solid',
-                          borderBottomColor: invoiceDetailTab === tab ? (isDarkMode ? '#e5e5e5' : '#171717') : 'transparent',
+                          borderBottomColor: invoiceDetailTab === tab ? '#3F83F8' : 'transparent',
                           cursor: 'pointer', whiteSpace: 'nowrap'
                         }}>
                           {tab === 'booking' ? 'Booking Details' : tab === 'student' ? 'Student Details' : 'Invoices'}
